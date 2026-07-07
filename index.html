@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voxa — Voice Assistant</title>
+<meta name="theme-color" content="#0A0B10">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0B10;
+    --panel:#12141F;
+    --panel-2:#181B29;
+    --violet:#7C5CFF;
+    --cyan:#35E1D0;
+    --amber:#FFB454;
+    --text:#EDEDF2;
+    --muted:#7A7E8C;
+    --danger:#FF6B6B;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:radial-gradient(120% 100% at 50% -10%, #171a26 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .app{
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 20px 8px;
+  }
+  .brand{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:0.3px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);}
+  .icon-btn{
+    width:38px;height:38px;border-radius:12px;
+    background:var(--panel);
+    border:1px solid #232637;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .icon-btn:active{background:var(--panel-2);}
+
+  .stage{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    position:relative;
+  }
+  .status{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+    height:18px;
+  }
+  .status.listening{color:var(--cyan);}
+  .status.speaking{color:var(--amber);}
+
+  .orb-wrap{
+    position:relative;
+    width:240px;height:240px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  svg.orb{width:240px;height:240px;overflow:visible;}
+  .ring{
+    fill:none;
+    stroke-width:1.4;
+    transform-origin:center;
+    transition:stroke 0.4s ease;
+  }
+  .core{
+    fill:var(--text);
+    filter:drop-shadow(0 0 18px rgba(124,92,255,0.55));
+    transition:filter 0.4s ease;
+  }
+  .orb-wrap.listening .core{filter:drop-shadow(0 0 26px rgba(53,225,208,0.75));}
+  .orb-wrap.speaking .core{filter:drop-shadow(0 0 26px rgba(255,180,84,0.75));}
+
+  .tap-hint{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:0.5px;
+  }
+
+  .transcript{
+    width:100%;
+    max-width:640px;
+    margin:0 auto;
+    padding:0 20px 14px;
+    max-height:34vh;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    scrollbar-width:none;
+  }
+  .transcript::-webkit-scrollbar{display:none;}
+  .line{
+    font-size:14px;
+    line-height:1.45;
+    padding:10px 14px;
+    border-radius:14px;
+    max-width:88%;
+    animation:rise 0.25s ease;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .line.user{
+    align-self:flex-end;
+    background:var(--panel-2);
+    border:1px solid #262a3d;
+    color:var(--text);
+  }
+  .line.assistant{
+    align-self:flex-start;
+    background:transparent;
+    border:1px solid #1e2130;
+    color:#D6D8E4;
+  }
+  .line .tag{
+    display:block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+
+  footer{
+    padding:10px 20px calc(20px + env(safe-area-inset-bottom));
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .mic-btn{
+    flex:1;
+    height:56px;
+    border-radius:18px;
+    border:none;
+    background:linear-gradient(135deg, var(--violet), #5B3FE0);
+    color:#fff;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:0.3px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(124,92,255,0.35);
+  }
+  .mic-btn.listening{
+    background:linear-gradient(135deg, var(--cyan), #1FB6A8);
+    box-shadow:0 8px 24px rgba(53,225,208,0.35);
+  }
+  .mic-btn:active{transform:scale(0.98);}
+  .cont-toggle{
+    width:56px;height:56px;
+    border-radius:18px;
+    background:var(--panel);
+    border:1px solid #232637;
+    color:var(--muted);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:11px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .cont-toggle.active{color:var(--cyan);border-color:#1FB6A8;}
+
+  /* modal */
+  .modal-backdrop{
+    position:fixed;inset:0;
+    background:rgba(6,7,12,0.7);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:20;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    width:100%;max-width:480px;
+    background:var(--panel);
+    border:1px solid #232637;
+    border-radius:22px 22px 0 0;
+    padding:22px 22px calc(26px + env(safe-area-inset-bottom));
+    max-height:80vh;
+    overflow-y:auto;
+  }
+  .modal h2{
+    font-family:'Space Grotesk',sans-serif;
+    margin:0 0 4px;
+    font-size:19px;
+  }
+  .modal p.sub{color:var(--muted);font-size:13px;margin:0 0 18px;line-height:1.5;}
+  label{
+    display:block;font-size:12px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:0.8px;
+    margin:16px 0 6px;
+  }
+  input[type=text], input[type=password]{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid #262a3d;
+    color:var(--text);
+    padding:12px 14px;
+    border-radius:12px;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+  }
+  input:focus{outline:1px solid var(--violet);}
+  .modal .row{display:flex;gap:10px;margin-top:20px;}
+  .btn{
+    flex:1;
+    padding:13px;
+    border-radius:12px;
+    border:none;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .btn.primary{background:var(--violet);color:#fff;}
+  .btn.ghost{background:transparent;border:1px solid #262a3d;color:var(--text);}
+  .hint-box{
+    background:var(--panel-2);
+    border:1px solid #232637;
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:12.5px;
+    color:var(--muted);
+    line-height:1.6;
+    margin-top:14px;
+  }
+  .hint-box a{color:var(--cyan);text-decoration:none;}
+  .commands-list{
+    display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;
+  }
+  .chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    background:var(--panel-2);
+    border:1px solid #232637;
+    color:var(--muted);
+    padding:6px 10px;
+    border-radius:20px;
+  }
+  .toast{
+    position:fixed;
+    top:calc(14px + env(safe-area-inset-top));
+    left:50%;transform:translateX(-50%);
+    background:var(--panel-2);
+    border:1px solid #262a3d;
+    color:var(--text);
+    padding:10px 16px;
+    border-radius:12px;
+    font-size:13px;
+    z-index:30;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><span class="dot"></span>Voxa</div>
+    <div class="icon-btn" id="settingsBtn">⚙</div>
+  </header>
+
+  <div class="stage">
+    <div class="status" id="statusText">tap the mic to talk</div>
+    <div class="orb-wrap" id="orbWrap">
+      <svg class="orb" viewBox="0 0 240 240">
+        <circle class="ring" id="ring1" cx="120" cy="120" r="60" stroke="#7C5CFF" stroke-opacity="0.35"/>
+        <circle class="ring" id="ring2" cx="120" cy="120" r="82" stroke="#7C5CFF" stroke-opacity="0.22"/>
+        <circle class="ring" id="ring3" cx="120" cy="120" r="104" stroke="#35E1D0" stroke-opacity="0.14"/>
+        <circle class="core" id="core" cx="120" cy="120" r="26"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="transcript" id="transcript"></div>
+
+  <footer>
+    <button class="cont-toggle" id="contToggle" title="Continuous mode">LOOP</button>
+    <button class="mic-btn" id="micBtn">
+      <span id="micLabel">Tap to talk</span>
+    </button>
+  </footer>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h2>Settings</h2>
+    <p class="sub">Everything runs on your device. Nothing is sent anywhere except the two optional lookups below (weather, and smart Q&A if you add a key).</p>
+
+    <label>Your city (for weather)</label>
+    <input type="text" id="cityInput" placeholder="e.g. Amaravati">
+
+    <label>Free AI key for open-ended questions (optional)</label>
+    <input type="password" id="apiKeyInput" placeholder="Paste Groq API key">
+    <div class="hint-box">
+      Voxa already handles time, date, math, timers, notes, jokes, weather, and opening sites without any key.<br><br>
+      For it to also answer <em>open, general questions</em> like a real assistant, get a free key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> (no credit card, generous free tier) and paste it here. Stored only on this device.
+    </div>
+
+    <label>Voice</label>
+    <input type="text" id="voiceInput" readonly placeholder="Loading voices...">
+
+    <div class="row">
+      <button class="btn ghost" id="clearNotesBtn">Clear notes</button>
+      <button class="btn primary" id="saveSettingsBtn">Save</button>
+    </div>
+
+    <label style="margin-top:22px;">Try saying</label>
+    <div class="commands-list">
+      <span class="chip">what time is it</span>
+      <span class="chip">what's the weather</span>
+      <span class="chip">set a timer for 2 minutes</span>
+      <span class="chip">take a note buy milk</span>
+      <span class="chip">read my notes</span>
+      <span class="chip">tell me a joke</span>
+      <span class="chip">what is 45 times 12</span>
+      <span class="chip">open youtube</span>
+      <span class="chip">search for cats</span>
+      <span class="chip">stop</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- Utility ---------------- */
+const $ = (id) => document.getElementById(id);
+const transcriptEl = $('transcript');
+const statusEl = $('statusText');
+const orbWrap = $('orbWrap');
+const micBtn = $('micBtn');
+const micLabel = $('micLabel');
+const contToggle = $('contToggle');
+const toastEl = $('toast');
+
+function toast(msg, ms=2200){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>toastEl.classList.remove('show'), ms);
+}
+
+function addLine(role, text){
+  const div = document.createElement('div');
+  div.className = 'line ' + role;
+  const tag = document.createElement('span');
+  tag.className = 'tag';
+  tag.textContent = role === 'user' ? 'you' : 'voxa';
+  div.appendChild(tag);
+  const body = document.createElement('span');
+  body.textContent = text;
+  div.appendChild(body);
+  transcriptEl.appendChild(div);
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+}
+
+function setStatus(state, text){
+  statusEl.textContent = text;
+  statusEl.className = 'status ' + state;
+  orbWrap.className = 'orb-wrap ' + state;
+}
+
+/* ---------------- Settings persistence ---------------- */
+const store = {
+  get(k, d=null){ try{ const v = localStorage.getItem(k); return v===null? d : JSON.parse(v);}catch(e){return d;} },
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+let settings = store.get('voxa_settings', {city:'', apiKey:''});
+let notes = store.get('voxa_notes', []);
+
+$('cityInput').value = settings.city || '';
+$('apiKeyInput').value = settings.apiKey || '';
+
+$('settingsBtn').onclick = () => $('modalBackdrop').classList.add('open');
+$('modalBackdrop').onclick = (e) => { if(e.target.id==='modalBackdrop') $('modalBackdrop').classList.remove('open'); };
+$('saveSettingsBtn').onclick = () => {
+  settings.city = $('cityInput').value.trim();
+  settings.apiKey = $('apiKeyInput').value.trim();
+  store.set('voxa_settings', settings);
+  $('modalBackdrop').classList.remove('open');
+  toast('Settings saved');
+};
+$('clearNotesBtn').onclick = () => {
+  notes = [];
+  store.set('voxa_notes', notes);
+  toast('Notes cleared');
+};
+
+/* ---------------- Speech Synthesis ---------------- */
+const synth = window.speechSynthesis;
+let voices = [];
+function loadVoices(){
+  voices = synth.getVoices();
+  const preferred = voices.find(v => /en-US|en-GB/.test(v.lang) && /Female|Google/.test(v.name)) || voices.find(v=>/^en/.test(v.lang)) || voices[0];
+  $('voiceInput').value = preferred ? preferred.name + ' (' + preferred.lang + ')' : 'default';
+  loadVoices.chosen = preferred;
+}
+if (synth) {
+  loadVoices();
+  synth.onvoiceschanged = loadVoices;
+}
+
+function speak(text){
+  return new Promise((resolve) => {
+    addLine('assistant', text);
+    if (!synth) { resolve(); return; }
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    if (loadVoices.chosen) utter.voice = loadVoices.chosen;
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
+    utter.onstart = () => setStatus('speaking', 'speaking');
+    utter.onend = () => { setStatus('idle', continuous ? 'listening loop active' : 'tap the mic to talk'); resolve(); };
+    utter.onerror = () => resolve();
+    synth.speak(utter);
+  });
+}
+
+/* ---------------- Speech Recognition ---------------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let listening = false;
+let continuous = false;
+let manualStop = false;
+
+if (SR) {
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    listening = true;
+    micBtn.classList.add('listening');
+    micLabel.textContent = 'Listening…';
+    setStatus('listening', 'listening');
+  };
+
+  recognition.onresult = (e) => {
+    const text = e.results[e.results.length-1][0].transcript.trim();
+    if (text) {
+      addLine('user', text);
+      handleCommand(text);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      toast('Microphone permission is blocked. Enable it in your browser site settings.');
+      continuous = false;
+      contToggle.classList.remove('active');
+    }
+  };
+
+  recognition.onend = () => {
+    listening = false;
+    micBtn.classList.remove('listening');
+    micLabel.textContent = 'Tap to talk';
+    if (continuous && !manualStop && !synth.speaking) {
+      try { recognition.start(); } catch(e){}
+    } else if (!synth.speaking) {
+      setStatus('idle', 'tap the mic to talk');
+    }
+  };
+} else {
+  micLabel.textContent = 'Voice not supported here';
+  setStatus('idle', 'try Chrome on Android');
+}
+
+micBtn.onclick = () => {
+  if (!recognition) return;
+  manualStop = false;
+  if (listening) {
+    manualStop = true;
+    recognition.stop();
+  } else {
+    try { recognition.start(); } catch(e){}
+  }
+};
+
+contToggle.onclick = () => {
+  continuous = !continuous;
+  contToggle.classList.toggle('active', continuous);
+  if (continuous) {
+    toast('Loop mode: stays listening while this tab is open');
+    manualStop = false;
+    if (!listening) { try{ recognition.start(); }catch(e){} }
+  } else {
+    manualStop = true;
+    if (listening) recognition.stop();
+  }
+};
+
+/* ---------------- Command handling ---------------- */
+async function handleCommand(raw){
+  const text = raw.toLowerCase();
+
+  // stop
+  if (/^(stop|cancel|never ?mind|quiet|shut up)\b/.test(text)) {
+    synth.cancel();
+    if (listening) { manualStop = true; recognition.stop(); }
+    continuous = false;
+    contToggle.classList.remove('active');
+    await speak('Okay, stopping.');
+    return;
+  }
+
+  // greeting
+  if (/^(hi|hello|hey)\b/.test(text)) {
+    await speak(pick(['Hey there!', 'Hello! What can I do for you?', "Hi! I'm listening."]));
+    return;
+  }
+
+  // time
+  if (/what('?s| is)?\s*(the)?\s*time/.test(text) || text.includes('current time')) {
+    const now = new Date();
+    await speak(`It's ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.`);
+    return;
+  }
+
+  // date
+  if (/what('?s| is)?\s*(the)?\s*date|what day is it/.test(text)) {
+    const now = new Date();
+    await speak(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'})}.`);
+    return;
+  }
+
+  // math
+  const mathMatch = text.match(/(?:what(?:'s| is)?\s*)?([\d\s()+\-*/.]+(?:(?:plus|minus|times|divided by|multiplied by|x)[\d\s()+\-*/.]+)*)/i);
+  if (/\d/.test(text) && /(plus|minus|times|divided by|multiplied by|calculate|what is \d|percent of)/.test(text)) {
+    const result = safeMath(text);
+    if (result !== null) {
+      await speak(`That's ${result}.`);
+      return;
+    }
+  }
+
+  // timer
+  const timerMatch = text.match(/(?:set a? ?)?timer(?: for)? (\d+)\s*(second|sec|minute|min|hour)/);
+  if (timerMatch) {
+    const n = parseInt(timerMatch[1]);
+    const unit = timerMatch[2];
+    const ms = unit.startsWith('sec') ? n*1000 : unit.startsWith('min') ? n*60000 : n*3600000;
+    setTimeout(() => {
+      toast(`⏰ Timer done: ${n} ${unit}${n>1?'s':''}`);
+      speak(`Your ${n} ${unit} timer is up.`);
+    }, ms);
+    await speak(`Timer set for ${n} ${unit}${n>1?'s':''}.`);
+    return;
+  }
+
+  // notes - take
+  const noteMatch = text.match(/(?:take a note|remember that|add a note|note that)\s+(.*)/);
+  if (noteMatch && noteMatch[1]) {
+    notes.push(noteMatch[1]);
+    store.set('voxa_notes', notes);
+    await speak('Got it, noted.');
+    return;
+  }
+
+  // notes - read
+  if (/read (my|the) notes|what are my notes|list my notes/.test(text)) {
+    if (notes.length === 0) { await speak("You don't have any notes yet."); }
+    else { await speak(`You have ${notes.length} note${notes.length>1?'s':''}: ${notes.join('. ')}`); }
+    return;
+  }
+
+  // jokes
+  if (/joke/.test(text)) {
+    await speak(pick(JOKES));
+    return;
+  }
+
+  // open site
+  const siteMap = {
+    youtube:'https://youtube.com', google:'https://google.com', maps:'https://maps.google.com',
+    gmail:'https://mail.google.com', whatsapp:'https://web.whatsapp.com', instagram:'https://instagram.com',
+    twitter:'https://x.com', 'x ':'https://x.com', github:'https://github.com', spotify:'https://open.spotify.com',
+    amazon:'https://amazon.in', wikipedia:'https://wikipedia.org'
+  };
+  const openMatch = text.match(/open (.+)/);
+  if (openMatch) {
+    const target = openMatch[1].trim();
+    const key = Object.keys(siteMap).find(k => target.includes(k.trim()));
+    if (key) {
+      window.open(siteMap[key], '_blank');
+      await speak(`Opening ${key.trim()}.`);
+      return;
+    }
+  }
+
+  // web search
+  const searchMatch = text.match(/(?:search for|search|google)\s+(.*)/);
+  if (searchMatch && searchMatch[1]) {
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(searchMatch[1]), '_blank');
+    await speak(`Searching for ${searchMatch[1]}.`);
+    return;
+  }
+
+  // weather
+  if (/weather/.test(text)) {
+    const cityGuess = (text.match(/weather (?:in|at|for) (.+)/) || [])[1] || settings.city;
+    if (!cityGuess) {
+      await speak('Which city? You can also set a default city in Settings.');
+      return;
+    }
+    await speak('Checking the weather…');
+    try {
+      const w = await getWeather(cityGuess);
+      await speak(w);
+    } catch (e) {
+      await speak("I couldn't fetch the weather right now.");
+    }
+    return;
+  }
+
+  // fallback -> AI if key present
+  if (settings.apiKey) {
+    await speak('Let me think…');
+    try {
+      const answer = await askAI(raw);
+      await speak(answer);
+    } catch (e) {
+      await speak("I couldn't reach the AI service just now. " + (e.message || ''));
+    }
+    return;
+  }
+
+  await speak("I didn't quite catch a command I know. Try 'what time is it', or add a free AI key in Settings so I can answer anything.");
+}
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function safeMath(text){
+  let t = text
+    .replace(/what(?:'s| is)?/g, '')
+    .replace(/calculate/g, '')
+    .replace(/plus/g, '+')
+    .replace(/minus/g, '-')
+    .replace(/times|multiplied by|x/g, '*')
+    .replace(/divided by/g, '/')
+    .trim();
+  if (!/^[0-9+\-*/(). ]+$/.test(t)) return null;
+  try {
+    // eslint-disable-next-line no-new-func
+    const result = Function('"use strict"; return (' + t + ')')();
+    if (typeof result === 'number' && isFinite(result)) {
+      return Math.round(result * 1000) / 1000;
+    }
+  } catch(e){}
+  return null;
+}
+
+async function getWeather(city){
+  const geo = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(city) + '&count=1');
+  const geoData = await geo.json();
+  if (!geoData.results || !geoData.results.length) throw new Error('city not found');
+  const { latitude, longitude, name } = geoData.results[0];
+  const wres = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+  const wdata = await wres.json();
+  const c = wdata.current_weather;
+  const desc = weatherCodeToText(c.weathercode);
+  return `${name}: ${Math.round(c.temperature)}°C, ${desc}, wind ${Math.round(c.windspeed)} km/h.`;
+}
+
+function weatherCodeToText(code){
+  const map = {0:'clear sky',1:'mostly clear',2:'partly cloudy',3:'overcast',45:'foggy',48:'foggy',
+  51:'light drizzle',53:'drizzle',55:'heavy drizzle',61:'light rain',63:'rain',65:'heavy rain',
+  71:'light snow',73:'snow',75:'heavy snow',80:'rain showers',81:'rain showers',82:'violent showers',
+  95:'thunderstorm',96:'thunderstorm with hail',99:'severe thunderstorm'};
+  return map[code] || 'unusual conditions';
+}
+
+async function askAI(question){
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + settings.apiKey
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {role:'system', content:'You are Voxa, a concise voice assistant. Answer in 1-3 short spoken sentences, no markdown, no lists.'},
+        {role:'user', content: question}
+      ],
+      max_tokens: 200
+    })
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error('API error ' + res.status);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || "I don't have an answer for that.";
+}
+
+const JOKES = [
+  "Why do programmers prefer dark mode? Because light attracts bugs.",
+  "I told my computer I needed a break, and it said no problem — it froze immediately.",
+  "Why did the developer go broke? Because they used up all their cache.",
+  "There are 10 types of people: those who understand binary, and those who don't.",
+  "Why was the phone wearing glasses? It lost all its contacts."
+];
+
+/* Greet on first load */
+window.addEventListener('load', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+  addLine('assistant', "Hi, I'm Voxa. Tap the mic and talk to me.");
+});
+</script>
+</body>
+</html>
