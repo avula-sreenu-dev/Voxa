@@ -1,4 +1,4 @@
-const CACHE_NAME = 'voxa-cache-v2';
+const CACHE_NAME = 'voxa-cache-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -23,12 +23,12 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first for the app shell: always tries to fetch the latest version first,
-// and only falls back to the cached copy if there's no internet connection.
-// (The old cache-first version is why updates weren't showing up — fixed here.)
+// Network-first: always fetches the latest file first, only using the cached
+// copy if there's genuinely no internet connection. This is what actually
+// makes future updates show up without manual cache-clearing.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return; // let weather/AI API calls hit network directly
+  if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     fetch(event.request)
