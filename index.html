@@ -58,6 +58,17 @@
     gap:8px;
   }
   .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);}
+  .version-badge{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:400;
+    color:var(--cyan);
+    background:rgba(53,225,208,0.12);
+    border:1px solid rgba(53,225,208,0.35);
+    padding:2px 8px;
+    border-radius:20px;
+    letter-spacing:0.5px;
+  }
   .icon-btn{
     width:38px;height:38px;border-radius:12px;
     background:var(--panel);
@@ -107,13 +118,6 @@
   }
   .orb-wrap.listening .core{filter:drop-shadow(0 0 26px rgba(53,225,208,0.75));}
   .orb-wrap.speaking .core{filter:drop-shadow(0 0 26px rgba(255,180,84,0.75));}
-
-  .tap-hint{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    color:var(--muted);
-    letter-spacing:0.5px;
-  }
 
   .transcript{
     width:100%;
@@ -201,7 +205,6 @@
   }
   .cont-toggle.active{color:var(--cyan);border-color:#1FB6A8;}
 
-  /* modal */
   .modal-backdrop{
     position:fixed;inset:0;
     background:rgba(6,7,12,0.7);
@@ -232,7 +235,7 @@
     text-transform:uppercase;letter-spacing:0.8px;
     margin:16px 0 6px;
   }
-  input[type=text], input[type=password]{
+  input[type=text], input[type=password], select{
     width:100%;
     background:var(--panel-2);
     border:1px solid #262a3d;
@@ -242,7 +245,8 @@
     font-size:14px;
     font-family:'Inter',sans-serif;
   }
-  input:focus{outline:1px solid var(--violet);}
+  select{appearance:none;-webkit-appearance:none;}
+  input:focus, select:focus{outline:1px solid var(--violet);}
   .modal .row{display:flex;gap:10px;margin-top:20px;}
   .btn{
     flex:1;
@@ -293,6 +297,8 @@
     opacity:0;
     pointer-events:none;
     transition:opacity 0.25s ease, transform 0.25s ease;
+    max-width:80vw;
+    text-align:center;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
 </style>
@@ -300,7 +306,7 @@
 <body>
 <div class="app">
   <header>
-    <div class="brand"><span class="dot"></span>Voxa</div>
+    <div class="brand"><span class="dot"></span>Voxa <span class="version-badge" id="versionBadge">v0.0.0</span></div>
     <div class="icon-btn" id="settingsBtn">⚙</div>
   </header>
 
@@ -319,7 +325,7 @@
   <div class="transcript" id="transcript"></div>
 
   <footer>
-    <button class="cont-toggle" id="contToggle" title="Continuous mode">LOOP</button>
+    <button class="cont-toggle" id="contToggle" title="Loop mode">LOOP</button>
     <button class="mic-btn" id="micBtn">
       <span id="micLabel">Tap to talk</span>
     </button>
@@ -329,7 +335,7 @@
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
     <h2>Settings</h2>
-    <p class="sub">Everything runs on your device. Nothing is sent anywhere except the two optional lookups below (weather, and smart Q&A if you add a key).</p>
+    <p class="sub">Everything runs on your device. Nothing leaves it except two optional lookups: weather, and smart Q&A if you add a key below.</p>
 
     <label>Your city (for weather)</label>
     <input type="text" id="cityInput" placeholder="e.g. Amaravati">
@@ -337,30 +343,49 @@
     <label>Free AI key for open-ended questions (optional)</label>
     <input type="password" id="apiKeyInput" placeholder="Paste Groq API key">
     <div class="hint-box">
-      Voxa already handles time, date, math, timers, notes, jokes, weather, and opening sites without any key.<br><br>
-      For it to also answer <em>open, general questions</em> like a real assistant, get a free key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> (no credit card, generous free tier) and paste it here. Stored only on this device.
+      Voxa already handles time, date, math, timers, notes, jokes, weather, alarms, calls, and opening apps without any key.<br><br>
+      For open, general questions, get a free key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> (no card needed) and paste it here. It's saved on this device only — you paste it once, ever.
     </div>
 
     <label>Voice</label>
-    <input type="text" id="voiceInput" readonly placeholder="Loading voices...">
+    <select id="voiceSelect"><option>Loading voices…</option></select>
+    <div class="row" style="margin-top:10px;">
+      <button class="btn ghost" id="testVoiceBtn" type="button">Test voice</button>
+    </div>
+
+    <label>Quick action</label>
+    <div class="row" style="margin-top:0;">
+      <button class="btn ghost" id="pickContactBtn" type="button">📇 Pick contact to call</button>
+    </div>
 
     <div class="row">
-      <button class="btn ghost" id="clearNotesBtn">Clear notes</button>
-      <button class="btn primary" id="saveSettingsBtn">Save</button>
+      <button class="btn ghost" id="clearNotesBtn" type="button">Clear notes</button>
+      <button class="btn primary" id="saveSettingsBtn" type="button">Save</button>
     </div>
 
     <label style="margin-top:22px;">Try saying</label>
     <div class="commands-list">
       <span class="chip">what time is it</span>
       <span class="chip">what's the weather</span>
+      <span class="chip">set an alarm for 7 am</span>
       <span class="chip">set a timer for 2 minutes</span>
       <span class="chip">take a note buy milk</span>
       <span class="chip">read my notes</span>
       <span class="chip">tell me a joke</span>
       <span class="chip">what is 45 times 12</span>
-      <span class="chip">open youtube</span>
-      <span class="chip">search for cats</span>
+      <span class="chip">open instagram</span>
+      <span class="chip">open telegram</span>
+      <span class="chip">open snapchat</span>
+      <span class="chip">open facebook</span>
+      <span class="chip">open photos</span>
+      <span class="chip">call 9876543210</span>
+      <span class="chip">email about project update</span>
+      <span class="chip">whatsapp 9876543210 saying hi</span>
+      <span class="chip">add calendar event team sync</span>
       <span class="chip">stop</span>
+    </div>
+    <div class="hint-box">
+      "Open X" works for any app in Voxa's list below — it hands off to that app's own registered link, the same mechanism Alexa itself relies on. If the app isn't installed, Voxa falls back to its website. A few apps (Camera, native Gallery, system Settings) publish no such link to anyone, Alexa included, so those can't be opened by any app on any phone.
     </div>
   </div>
 </div>
@@ -368,6 +393,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
+/* ---------------- Version — check this number in the app to confirm you're on the latest file ---------------- */
+const VOXA_VERSION = '1.3.0';
+
 /* ---------------- Utility ---------------- */
 const $ = (id) => document.getElementById(id);
 const transcriptEl = $('transcript');
@@ -377,8 +405,9 @@ const micBtn = $('micBtn');
 const micLabel = $('micLabel');
 const contToggle = $('contToggle');
 const toastEl = $('toast');
+const isAndroid = /Android/i.test(navigator.userAgent);
 
-function toast(msg, ms=2200){
+function toast(msg, ms=2400){
   toastEl.textContent = msg;
   toastEl.classList.add('show');
   clearTimeout(toast._t);
@@ -411,7 +440,7 @@ const store = {
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
 
-let settings = store.get('voxa_settings', {city:'', apiKey:''});
+let settings = store.get('voxa_settings', {city:'', apiKey:'', voiceKey:''});
 let notes = store.get('voxa_notes', []);
 
 $('cityInput').value = settings.city || '';
@@ -419,32 +448,63 @@ $('apiKeyInput').value = settings.apiKey || '';
 
 $('settingsBtn').onclick = () => $('modalBackdrop').classList.add('open');
 $('modalBackdrop').onclick = (e) => { if(e.target.id==='modalBackdrop') $('modalBackdrop').classList.remove('open'); };
+
 $('saveSettingsBtn').onclick = () => {
   settings.city = $('cityInput').value.trim();
   settings.apiKey = $('apiKeyInput').value.trim();
+  settings.voiceKey = $('voiceSelect').value;
   store.set('voxa_settings', settings);
   $('modalBackdrop').classList.remove('open');
   toast('Settings saved');
 };
+
 $('clearNotesBtn').onclick = () => {
   notes = [];
   store.set('voxa_notes', notes);
   toast('Notes cleared');
 };
 
-/* ---------------- Speech Synthesis ---------------- */
+$('pickContactBtn').onclick = async () => {
+  const ok = await pickContactAndAct('call');
+  if (!ok) toast('Contact picker not available on this browser/device.');
+};
+
+/* ---------------- Speech Synthesis (with saved voice choice) ---------------- */
 const synth = window.speechSynthesis;
 let voices = [];
+const voiceSelect = $('voiceSelect');
+
 function loadVoices(){
   voices = synth.getVoices();
-  const preferred = voices.find(v => /en-US|en-GB/.test(v.lang) && /Female|Google/.test(v.name)) || voices.find(v=>/^en/.test(v.lang)) || voices[0];
-  $('voiceInput').value = preferred ? preferred.name + ' (' + preferred.lang + ')' : 'default';
-  loadVoices.chosen = preferred;
+  if (!voices.length) return;
+  const savedVoiceKey = settings.voiceKey || '';
+  voiceSelect.innerHTML = '';
+  voices.forEach((v) => {
+    const opt = document.createElement('option');
+    const key = v.name + '|' + v.lang;
+    opt.value = key;
+    opt.textContent = `${v.name} (${v.lang})`;
+    if (key === savedVoiceKey) opt.selected = true;
+    voiceSelect.appendChild(opt);
+  });
+  if (!savedVoiceKey) {
+    const preferred = voices.find(v => /en-US|en-GB/.test(v.lang) && /Female|Google/i.test(v.name)) || voices.find(v=>/^en/.test(v.lang)) || voices[0];
+    if (preferred) voiceSelect.value = preferred.name + '|' + preferred.lang;
+  }
 }
 if (synth) {
   loadVoices();
   synth.onvoiceschanged = loadVoices;
 }
+
+function currentVoice(){
+  const key = voiceSelect.value;
+  if (!key) return null;
+  const [name, lang] = key.split('|');
+  return voices.find(v => v.name === name && v.lang === lang) || null;
+}
+
+$('testVoiceBtn').onclick = () => speak("Hi, this is how I'll sound.");
 
 function speak(text){
   return new Promise((resolve) => {
@@ -452,229 +512,221 @@ function speak(text){
     if (!synth) { resolve(); return; }
     synth.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    if (loadVoices.chosen) utter.voice = loadVoices.chosen;
+    const v = currentVoice();
+    if (v) utter.voice = v;
     utter.rate = 1.0;
     utter.pitch = 1.0;
     utter.onstart = () => setStatus('speaking', 'speaking');
-    utter.onend = () => { setStatus('idle', continuous ? 'listening loop active' : 'tap the mic to talk'); resolve(); };
+    utter.onend = () => { setStatus('idle', loopMode ? 'loop listening' : 'tap the mic to talk'); resolve(); };
     utter.onerror = () => resolve();
     synth.speak(utter);
   });
 }
 
-/* ---------------- Speech Recognition ---------------- */
+/* ---------------- Speech Recognition — robust loop mode ---------------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let listening = false;
-let continuous = false;
-let manualStop = false;
+let loopMode = false;
+let loopRunId = 0;
 
 if (SR) {
   recognition = new SR();
   recognition.lang = 'en-US';
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
-
-  recognition.onstart = () => {
-    listening = true;
-    micBtn.classList.add('listening');
-    micLabel.textContent = 'Listening…';
-    setStatus('listening', 'listening');
-  };
-
-  recognition.onresult = (e) => {
-    const text = e.results[e.results.length-1][0].transcript.trim();
-    if (text) {
-      addLine('user', text);
-      handleCommand(text);
-    }
-  };
-
-  recognition.onerror = (e) => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      toast('Microphone permission is blocked. Enable it in your browser site settings.');
-      continuous = false;
-      contToggle.classList.remove('active');
-    }
-  };
-
-  recognition.onend = () => {
-    listening = false;
-    micBtn.classList.remove('listening');
-    micLabel.textContent = 'Tap to talk';
-    if (continuous && !manualStop && !synth.speaking) {
-      try { recognition.start(); } catch(e){}
-    } else if (!synth.speaking) {
-      setStatus('idle', 'tap the mic to talk');
-    }
-  };
 } else {
   micLabel.textContent = 'Voice not supported here';
   setStatus('idle', 'try Chrome on Android');
 }
 
-micBtn.onclick = () => {
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+function listenOnce(){
+  return new Promise((resolve, reject) => {
+    if (!recognition) { reject('unsupported'); return; }
+    let settled = false;
+    recognition.onstart = () => {
+      listening = true;
+      micBtn.classList.add('listening');
+      micLabel.textContent = 'Listening…';
+      setStatus('listening', 'listening');
+    };
+    recognition.onresult = (e) => {
+      settled = true;
+      resolve(e.results[e.results.length-1][0].transcript.trim());
+    };
+    recognition.onerror = (e) => {
+      if (!settled) { settled = true; reject(e.error); }
+    };
+    recognition.onend = () => {
+      listening = false;
+      micBtn.classList.remove('listening');
+      micLabel.textContent = 'Tap to talk';
+      if (!settled) { settled = true; reject('no-result'); }
+    };
+    try { recognition.start(); }
+    catch (e) { if (!settled) { settled = true; reject('start-failed'); } }
+  });
+}
+
+micBtn.onclick = async () => {
   if (!recognition) return;
-  manualStop = false;
-  if (listening) {
-    manualStop = true;
-    recognition.stop();
-  } else {
-    try { recognition.start(); } catch(e){}
+  if (loopMode) { toast('Loop is on — tap LOOP to turn it off first.'); return; }
+  if (listening) { recognition.stop(); return; }
+  try {
+    const text = await listenOnce();
+    if (text) { addLine('user', text); await handleCommand(text); }
+  } catch (err) {
+    handleListenError(err);
   }
 };
 
 contToggle.onclick = () => {
-  continuous = !continuous;
-  contToggle.classList.toggle('active', continuous);
-  if (continuous) {
-    toast('Loop mode: stays listening while this tab is open');
-    manualStop = false;
-    if (!listening) { try{ recognition.start(); }catch(e){} }
+  loopMode = !loopMode;
+  contToggle.classList.toggle('active', loopMode);
+  if (loopMode) {
+    toast('Loop on — just talk. Say "stop" to end it.');
+    runLoop(++loopRunId);
   } else {
-    manualStop = true;
+    loopRunId++;
     if (listening) recognition.stop();
+    setStatus('idle', 'tap the mic to talk');
   }
 };
 
-/* ---------------- Command handling ---------------- */
-async function handleCommand(raw){
-  const text = raw.toLowerCase();
-
-  // stop
-  if (/^(stop|cancel|never ?mind|quiet|shut up)\b/.test(text)) {
-    synth.cancel();
-    if (listening) { manualStop = true; recognition.stop(); }
-    continuous = false;
-    contToggle.classList.remove('active');
-    await speak('Okay, stopping.');
-    return;
-  }
-
-  // greeting
-  if (/^(hi|hello|hey)\b/.test(text)) {
-    await speak(pick(['Hey there!', 'Hello! What can I do for you?', "Hi! I'm listening."]));
-    return;
-  }
-
-  // time
-  if (/what('?s| is)?\s*(the)?\s*time/.test(text) || text.includes('current time')) {
-    const now = new Date();
-    await speak(`It's ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.`);
-    return;
-  }
-
-  // date
-  if (/what('?s| is)?\s*(the)?\s*date|what day is it/.test(text)) {
-    const now = new Date();
-    await speak(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'})}.`);
-    return;
-  }
-
-  // math
-  const mathMatch = text.match(/(?:what(?:'s| is)?\s*)?([\d\s()+\-*/.]+(?:(?:plus|minus|times|divided by|multiplied by|x)[\d\s()+\-*/.]+)*)/i);
-  if (/\d/.test(text) && /(plus|minus|times|divided by|multiplied by|calculate|what is \d|percent of)/.test(text)) {
-    const result = safeMath(text);
-    if (result !== null) {
-      await speak(`That's ${result}.`);
-      return;
-    }
-  }
-
-  // timer
-  const timerMatch = text.match(/(?:set a? ?)?timer(?: for)? (\d+)\s*(second|sec|minute|min|hour)/);
-  if (timerMatch) {
-    const n = parseInt(timerMatch[1]);
-    const unit = timerMatch[2];
-    const ms = unit.startsWith('sec') ? n*1000 : unit.startsWith('min') ? n*60000 : n*3600000;
-    setTimeout(() => {
-      toast(`⏰ Timer done: ${n} ${unit}${n>1?'s':''}`);
-      speak(`Your ${n} ${unit} timer is up.`);
-    }, ms);
-    await speak(`Timer set for ${n} ${unit}${n>1?'s':''}.`);
-    return;
-  }
-
-  // notes - take
-  const noteMatch = text.match(/(?:take a note|remember that|add a note|note that)\s+(.*)/);
-  if (noteMatch && noteMatch[1]) {
-    notes.push(noteMatch[1]);
-    store.set('voxa_notes', notes);
-    await speak('Got it, noted.');
-    return;
-  }
-
-  // notes - read
-  if (/read (my|the) notes|what are my notes|list my notes/.test(text)) {
-    if (notes.length === 0) { await speak("You don't have any notes yet."); }
-    else { await speak(`You have ${notes.length} note${notes.length>1?'s':''}: ${notes.join('. ')}`); }
-    return;
-  }
-
-  // jokes
-  if (/joke/.test(text)) {
-    await speak(pick(JOKES));
-    return;
-  }
-
-  // open site
-  const siteMap = {
-    youtube:'https://youtube.com', google:'https://google.com', maps:'https://maps.google.com',
-    gmail:'https://mail.google.com', whatsapp:'https://web.whatsapp.com', instagram:'https://instagram.com',
-    twitter:'https://x.com', 'x ':'https://x.com', github:'https://github.com', spotify:'https://open.spotify.com',
-    amazon:'https://amazon.in', wikipedia:'https://wikipedia.org'
-  };
-  const openMatch = text.match(/open (.+)/);
-  if (openMatch) {
-    const target = openMatch[1].trim();
-    const key = Object.keys(siteMap).find(k => target.includes(k.trim()));
-    if (key) {
-      window.open(siteMap[key], '_blank');
-      await speak(`Opening ${key.trim()}.`);
-      return;
-    }
-  }
-
-  // web search
-  const searchMatch = text.match(/(?:search for|search|google)\s+(.*)/);
-  if (searchMatch && searchMatch[1]) {
-    window.open('https://www.google.com/search?q=' + encodeURIComponent(searchMatch[1]), '_blank');
-    await speak(`Searching for ${searchMatch[1]}.`);
-    return;
-  }
-
-  // weather
-  if (/weather/.test(text)) {
-    const cityGuess = (text.match(/weather (?:in|at|for) (.+)/) || [])[1] || settings.city;
-    if (!cityGuess) {
-      await speak('Which city? You can also set a default city in Settings.');
-      return;
-    }
-    await speak('Checking the weather…');
+async function runLoop(myRunId){
+  while (loopMode && myRunId === loopRunId) {
+    let text = null;
     try {
-      const w = await getWeather(cityGuess);
-      await speak(w);
-    } catch (e) {
-      await speak("I couldn't fetch the weather right now.");
+      text = await listenOnce();
+    } catch (err) {
+      if (myRunId !== loopRunId) return;
+      const fatal = handleListenError(err);
+      if (fatal) { loopMode = false; contToggle.classList.remove('active'); return; }
+      await sleep(400);
+      continue;
     }
-    return;
-  }
-
-  // fallback -> AI if key present
-  if (settings.apiKey) {
-    await speak('Let me think…');
-    try {
-      const answer = await askAI(raw);
-      await speak(answer);
-    } catch (e) {
-      await speak("I couldn't reach the AI service just now. " + (e.message || ''));
+    if (myRunId !== loopRunId) return;
+    if (text) {
+      addLine('user', text);
+      await handleCommand(text);
     }
-    return;
+    if (myRunId !== loopRunId || !loopMode) return;
+    await sleep(300);
   }
-
-  await speak("I didn't quite catch a command I know. Try 'what time is it', or add a free AI key in Settings so I can answer anything.");
 }
 
+function handleListenError(err){
+  if (err === 'not-allowed' || err === 'service-not-allowed') {
+    toast('Microphone permission is blocked. Enable it in your browser site settings.');
+    return true;
+  }
+  return false;
+}
+
+/* ---------------- Fuzzy matching (tolerates speech-recognition mishears) ---------------- */
+function levenshtein(a, b){
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for (let i=0;i<=m;i++) dp[i][0]=i;
+  for (let j=0;j<=n;j++) dp[0][j]=j;
+  for (let i=1;i<=m;i++){
+    for (let j=1;j<=n;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+function soundsLike(text, word, maxDist=1){
+  return text.split(/\s+/).some(tok => {
+    const clean = tok.replace(/[^a-z]/g,'');
+    if (!clean) return false;
+    if (clean === word) return true;
+    if (Math.abs(clean.length - word.length) > maxDist + 1) return false;
+    return levenshtein(clean, word) <= maxDist;
+  });
+}
+
+/* ---------------- Generic app launcher ----------------
+   Logic: each app publishes a native link scheme with the OS (same mechanism Alexa
+   itself relies on for "open Spotify" etc). We try that scheme; if the app isn't
+   installed the OS just does nothing and the page stays visible, so after a short
+   delay we fall back to the web version automatically. */
+const APP_LINKS = {
+  youtube:   { scheme:'vnd.youtube://',              web:'https://youtube.com' },
+  instagram: { scheme:'instagram://app',             web:'https://instagram.com' },
+  whatsapp:  { scheme:'whatsapp://',                 web:'https://web.whatsapp.com' },
+  facebook:  { scheme:'fb://',                       web:'https://facebook.com' },
+  messenger: { scheme:'fb-messenger://',              web:'https://messenger.com' },
+  twitter:   { scheme:'twitter://',                   web:'https://x.com' },
+  x:         { scheme:'twitter://',                   web:'https://x.com' },
+  telegram:  { scheme:'tg://',                        web:'https://t.me' },
+  snapchat:  { scheme:'snapchat://',                  web:'https://snapchat.com' },
+  spotify:   { scheme:'spotify://',                   web:'https://open.spotify.com' },
+  netflix:   { scheme:'nflx://',                       web:'https://netflix.com' },
+  linkedin:  { scheme:'linkedin://',                   web:'https://linkedin.com' },
+  paytm:     { scheme:'paytmmp://',                    web:'https://paytm.com' },
+  phonepe:   { scheme:'phonepe://',                    web:'https://phonepe.com' },
+  gpay:      { scheme:'tez://upi/',                    web:'https://pay.google.com' },
+  uber:      { scheme:'uber://',                       web:'https://m.uber.com' },
+  ola:       { scheme:'olacabs://',                    web:'https://www.olacabs.com' },
+  swiggy:    { scheme:'swiggy://',                      web:'https://www.swiggy.com' },
+  zomato:    { scheme:'zomato://',                      web:'https://www.zomato.com' },
+  maps:      { scheme:null,                             web:'https://maps.google.com' },
+  photos:    { scheme:null,                             web:'https://photos.google.com' },
+  gmail:     { scheme:null,                             web:'https://mail.google.com' },
+  amazon:    { scheme:null,                             web:'https://amazon.in' },
+  github:    { scheme:null,                             web:'https://github.com' },
+  wikipedia: { scheme:null,                             web:'https://wikipedia.org' },
+  google:    { scheme:null,                             web:'https://google.com' },
+};
+
+function openApp(name){
+  const app = APP_LINKS[name];
+  if (!app) return false;
+  if (!app.scheme) { window.open(app.web, '_blank'); return true; }
+  let hidden = false;
+  const onVis = () => { if (document.hidden) hidden = true; };
+  document.addEventListener('visibilitychange', onVis);
+  window.location.href = app.scheme;
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onVis);
+    if (!hidden && app.web) window.open(app.web, '_blank');
+  }, 1200);
+  return true;
+}
+
+// Uses the native Contact Picker (Android Chrome only).
+async function pickContactAndAct(action){
+  if (!('contacts' in navigator && 'ContactsManager' in window)) return false;
+  try {
+    const contacts = await navigator.contacts.select(['tel', 'name'], { multiple: false });
+    if (contacts.length && contacts[0].tel && contacts[0].tel.length) {
+      const number = contacts[0].tel[0];
+      if (action === 'call') window.location.href = 'tel:' + number;
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+function parseAlarmTime(text){
+  const m = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (!m) return null;
+  let hour = parseInt(m[1], 10);
+  const minute = m[2] ? parseInt(m[2], 10) : 0;
+  const ampm = m[3];
+  if (hour > 23 || minute > 59) return null;
+  if (ampm === 'pm' && hour < 12) hour += 12;
+  if (ampm === 'am' && hour === 12) hour = 0;
+  return { hour, minute };
+}
+function formatClock(hour, minute){
+  const h = ((hour % 12) || 12);
+  const suffix = hour < 12 ? 'AM' : 'PM';
+  return `${h}:${String(minute).padStart(2,'0')} ${suffix}`;
+}
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 function safeMath(text){
@@ -688,11 +740,8 @@ function safeMath(text){
     .trim();
   if (!/^[0-9+\-*/(). ]+$/.test(t)) return null;
   try {
-    // eslint-disable-next-line no-new-func
     const result = Function('"use strict"; return (' + t + ')')();
-    if (typeof result === 'number' && isFinite(result)) {
-      return Math.round(result * 1000) / 1000;
-    }
+    if (typeof result === 'number' && isFinite(result)) return Math.round(result * 1000) / 1000;
   } catch(e){}
   return null;
 }
@@ -705,10 +754,8 @@ async function getWeather(city){
   const wres = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
   const wdata = await wres.json();
   const c = wdata.current_weather;
-  const desc = weatherCodeToText(c.weathercode);
-  return `${name}: ${Math.round(c.temperature)}°C, ${desc}, wind ${Math.round(c.windspeed)} km/h.`;
+  return `${name}: ${Math.round(c.temperature)}°C, ${weatherCodeToText(c.weathercode)}, wind ${Math.round(c.windspeed)} km/h.`;
 }
-
 function weatherCodeToText(code){
   const map = {0:'clear sky',1:'mostly clear',2:'partly cloudy',3:'overcast',45:'foggy',48:'foggy',
   51:'light drizzle',53:'drizzle',55:'heavy drizzle',61:'light rain',63:'rain',65:'heavy rain',
@@ -717,26 +764,22 @@ function weatherCodeToText(code){
   return map[code] || 'unusual conditions';
 }
 
+let conversationHistory = [];
 async function askAI(question){
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + settings.apiKey
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.apiKey },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages: [
         {role:'system', content:'You are Voxa, a concise voice assistant. Answer in 1-3 short spoken sentences, no markdown, no lists.'},
+        ...conversationHistory,
         {role:'user', content: question}
       ],
       max_tokens: 200
     })
   });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error('API error ' + res.status);
-  }
+  if (!res.ok) throw new Error('API error ' + res.status);
   const data = await res.json();
   return data.choices?.[0]?.message?.content?.trim() || "I don't have an answer for that.";
 }
@@ -749,11 +792,181 @@ const JOKES = [
   "Why was the phone wearing glasses? It lost all its contacts."
 ];
 
-/* Greet on first load */
+/* ---------------- Command handling ---------------- */
+async function handleCommand(raw){
+  const text = raw.toLowerCase();
+
+  if (/^(stop|cancel|never ?mind|quiet|shut up)\b/.test(text)) {
+    synth.cancel();
+    loopMode = false;
+    loopRunId++;
+    contToggle.classList.remove('active');
+    if (listening) recognition.stop();
+    await speak('Okay, stopping.');
+    return;
+  }
+
+  if (/^(hi|hello|hey)\b/.test(text)) {
+    await speak(pick(['Hey there!', 'Hello! What can I do for you?', "Hi! I'm listening."]));
+    return;
+  }
+
+  if (/what('?s| is)?\s*(the)?\s*time/.test(text) || text.includes('current time')) {
+    const now = new Date();
+    await speak(`It's ${now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}.`);
+    return;
+  }
+
+  if (/what('?s| is)?\s*(the)?\s*date|what day is it/.test(text)) {
+    const now = new Date();
+    await speak(`Today is ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'})}.`);
+    return;
+  }
+
+  if (/\d/.test(text) && /(plus|minus|times|divided by|multiplied by|calculate|what is \d|percent of)/.test(text)) {
+    const result = safeMath(text);
+    if (result !== null) { await speak(`That's ${result}.`); return; }
+  }
+
+  // alarm — opens the phone's real Clock app with the time pre-filled (Android Chrome only)
+  if (/set (?:an |a )?alarm/.test(text) || /wake me/.test(text)) {
+    const t = parseAlarmTime(text);
+    if (!t) { await speak("Tell me a time — like 'set an alarm for 7 am'."); return; }
+    if (!isAndroid) {
+      await speak(`I can't set alarms automatically on this device — Apple doesn't allow any website to do that on iPhone. Please set ${formatClock(t.hour, t.minute)} in your Clock app.`);
+      return;
+    }
+    const uri = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${t.hour};i.android.intent.extra.alarm.MINUTES=${t.minute};S.android.intent.extra.alarm.MESSAGE=Voxa%20Alarm;end`;
+    window.location.href = uri;
+    await speak(`Opening your Clock app to set an alarm for ${formatClock(t.hour, t.minute)}.`);
+    return;
+  }
+
+  const timerMatch = text.match(/(?:set a? ?)?timer(?: for)? (\d+)\s*(second|sec|minute|min|hour)/);
+  if (timerMatch) {
+    const n = parseInt(timerMatch[1]);
+    const unit = timerMatch[2];
+    const ms = unit.startsWith('sec') ? n*1000 : unit.startsWith('min') ? n*60000 : n*3600000;
+    setTimeout(() => {
+      toast(`⏰ Timer done: ${n} ${unit}${n>1?'s':''}`);
+      speak(`Your ${n} ${unit} timer is up.`);
+    }, ms);
+    await speak(`Timer set for ${n} ${unit}${n>1?'s':''}.`);
+    return;
+  }
+
+  const noteMatch = text.match(/(?:take a note|remember that|add a note|note that)\s+(.*)/);
+  if (noteMatch && noteMatch[1]) {
+    notes.push(noteMatch[1]);
+    store.set('voxa_notes', notes);
+    await speak('Got it, noted.');
+    return;
+  }
+
+  if (/read (my|the) notes|what are my notes|list my notes/.test(text)) {
+    if (notes.length === 0) { await speak("You don't have any notes yet."); }
+    else { await speak(`You have ${notes.length} note${notes.length>1?'s':''}: ${notes.join('. ')}`); }
+    return;
+  }
+
+  if (/joke/.test(text) || soundsLike(text, 'joke', 2)) {
+    await speak(pick(JOKES));
+    return;
+  }
+
+  // call a number — "call 9876543210"
+  const callMatch = text.match(/call\s+([\d +\-]{6,})/);
+  if (callMatch) {
+    const number = callMatch[1].replace(/[^\d+]/g, '');
+    window.location.href = 'tel:' + number;
+    await speak(`Calling ${number}.`);
+    return;
+  }
+  if (/^call\b/.test(text)) {
+    const ok = await pickContactAndAct('call');
+    if (!ok) await speak("Say a phone number, like 'call' followed by the number, or use the contact picker in Settings.");
+    return;
+  }
+
+  const waMatch = text.match(/whatsapp\s+([\d +\-]{6,})(?:\s+saying\s+(.*))?/);
+  if (waMatch) {
+    const number = waMatch[1].replace(/[^\d+]/g, '');
+    const msg = waMatch[2] || '';
+    window.open(`https://wa.me/${number}${msg ? '?text=' + encodeURIComponent(msg) : ''}`, '_blank');
+    await speak('Opening WhatsApp — tap send to deliver it.');
+    return;
+  }
+
+  const emailMatch = text.match(/(?:send an? )?email(?: about| regarding)?\s*(.*)/);
+  if (emailMatch && /email/.test(text)) {
+    const subject = emailMatch[1] || '';
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}`;
+    await speak('Opening your email app.');
+    return;
+  }
+
+  const calMatch = text.match(/(?:add (?:a )?calendar event|add to calendar|schedule)\s+(.*)/);
+  if (calMatch && calMatch[1]) {
+    const title = calMatch[1];
+    const start = new Date(Date.now() + 60*60*1000);
+    const end = new Date(start.getTime() + 60*60*1000);
+    const fmt = (d) => d.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(start)}/${fmt(end)}`;
+    window.open(url, '_blank');
+    await speak(`Opening Calendar to add "${title}". Adjust the time and save.`);
+    return;
+  }
+
+  // generic "open X" — checks the app-launcher table
+  const openMatch = text.match(/open (.+)/);
+  if (openMatch) {
+    const target = openMatch[1].trim();
+    const key = Object.keys(APP_LINKS).find(k => target.includes(k));
+    if (key) {
+      openApp(key);
+      await speak(`Opening ${key}.`);
+      return;
+    }
+  }
+
+  const searchMatch = text.match(/(?:search for|search|google)\s+(.*)/);
+  if (searchMatch && searchMatch[1]) {
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(searchMatch[1]), '_blank');
+    await speak(`Searching for ${searchMatch[1]}.`);
+    return;
+  }
+
+  if (/weather/.test(text)) {
+    const cityGuess = (text.match(/weather (?:in|at|for) (.+)/) || [])[1] || settings.city;
+    if (!cityGuess) { await speak('Which city? You can also set a default city in Settings.'); return; }
+    await speak('Checking the weather…');
+    try { await speak(await getWeather(cityGuess)); }
+    catch (e) { await speak("I couldn't fetch the weather right now."); }
+    return;
+  }
+
+  if (settings.apiKey) {
+    await speak('Let me think…');
+    try {
+      const answer = await askAI(raw);
+      conversationHistory.push({role:'user', content: raw});
+      conversationHistory.push({role:'assistant', content: answer});
+      if (conversationHistory.length > 10) conversationHistory.splice(0, conversationHistory.length - 10);
+      await speak(answer);
+    } catch (e) {
+      await speak("I couldn't reach the AI service just now.");
+    }
+    return;
+  }
+
+  await speak("I didn't quite catch a command I know. Try 'what time is it', or add a free AI key in Settings so I can answer anything.");
+}
+
 window.addEventListener('load', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+  $('versionBadge').textContent = 'v' + VOXA_VERSION;
   addLine('assistant', "Hi, I'm Voxa. Tap the mic and talk to me.");
 });
 </script>
