@@ -301,6 +301,89 @@
     text-align:center;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
+
+  .quick-grid{
+    display:flex;
+    gap:12px;
+    padding:0 20px 16px;
+    max-width:640px;
+    margin:0 auto;
+    width:100%;
+  }
+  .quick-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    background:var(--panel);
+    border:1px solid #232637;
+    border-radius:16px;
+    padding:12px 6px;
+    cursor:pointer;
+    color:var(--text);
+  }
+  .quick-btn:active{background:var(--panel-2);}
+  .quick-icon{font-size:20px;}
+  .quick-label{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;}
+
+  footer{position:relative;}
+  #mainBar{flex:1;display:flex;gap:8px;align-items:center;min-width:0;}
+  .attach-btn{
+    width:44px;height:44px;border-radius:14px;flex-shrink:0;
+    background:var(--panel);border:1px solid #232637;color:var(--text);
+    font-size:22px;cursor:pointer;
+  }
+  #chatInput{
+    flex:1;min-width:0;height:48px;border-radius:16px;
+    background:var(--panel-2);border:1px solid #262a3d;color:var(--text);
+    padding:0 14px;font-size:14px;font-family:'Inter',sans-serif;
+  }
+  .mini-circle{
+    width:44px;height:44px;border-radius:50%;flex-shrink:0;
+    background:var(--panel);border:1px solid #232637;color:var(--text);
+    font-size:18px;cursor:pointer;
+  }
+  .mini-circle.send-btn{background:var(--violet);border:none;color:#fff;}
+  .attach-menu{
+    position:absolute;
+    bottom:74px;left:20px;
+    background:var(--panel);
+    border:1px solid #232637;
+    border-radius:16px;
+    padding:8px;
+    display:none;
+    flex-direction:column;
+    gap:4px;
+    z-index:15;
+    min-width:170px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .attach-menu.open{display:flex;}
+  .attach-menu button{
+    background:none;border:none;color:var(--text);
+    text-align:left;padding:10px 12px;border-radius:10px;
+    font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;
+  }
+  .attach-menu button:active{background:var(--panel-2);}
+  .attach-chip{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--panel-2);border:1px solid #262a3d;
+    border-radius:12px;padding:6px 12px;
+    font-size:12px;color:var(--muted);
+    margin:0 20px 8px;
+  }
+  .attach-chip button{background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;}
+  input[type=time]{
+    width:100%;background:var(--panel-2);border:1px solid #262a3d;color:var(--text);
+    padding:12px 14px;border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;
+  }
+  .app-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .app-grid button{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    background:var(--panel-2);border:1px solid #232637;color:var(--text);
+    padding:8px 12px;border-radius:20px;cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -322,13 +405,31 @@
     </div>
   </div>
 
+  <div class="quick-grid">
+    <div class="quick-btn" id="quickCall"><span class="quick-icon">📞</span><span class="quick-label">CALL</span></div>
+    <div class="quick-btn" id="quickAlarm"><span class="quick-icon">⏰</span><span class="quick-label">CLOCK</span></div>
+    <div class="quick-btn" id="quickCalendar"><span class="quick-icon">📅</span><span class="quick-label">CALENDAR</span></div>
+    <div class="quick-btn" id="quickMore"><span class="quick-icon">⋯</span><span class="quick-label">OTHERS</span></div>
+  </div>
+
   <div class="transcript" id="transcript"></div>
 
   <footer>
     <button class="cont-toggle" id="contToggle" title="Loop mode">LOOP</button>
-    <button class="mic-btn" id="micBtn">
-      <span id="micLabel">Tap to talk</span>
-    </button>
+    <button class="cont-toggle" id="modeToggle" title="Switch input mode">⌨</button>
+    <div id="mainBar">
+      <button class="mic-btn" id="micBtn" style="width:100%;">
+        <span id="micLabel">Tap to talk</span>
+      </button>
+    </div>
+    <div class="attach-menu" id="attachMenu">
+      <button id="attachCamera" type="button">📷 Camera</button>
+      <button id="attachPhotos" type="button">🖼️ Photos</button>
+      <button id="attachDocs" type="button">📄 Documents</button>
+    </div>
+    <input type="file" id="fileCameraInput" accept="image/*" capture="environment" style="display:none;">
+    <input type="file" id="filePhotosInput" accept="image/*" style="display:none;">
+    <input type="file" id="fileDocsInput" style="display:none;">
   </footer>
 </div>
 
@@ -390,11 +491,82 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="callModal">
+  <div class="modal">
+    <h2>Call</h2>
+    <p class="sub">Type a number, or pick straight from your contacts.</p>
+    <label>Phone number</label>
+    <input type="text" id="callNumberInput" placeholder="e.g. 9876543210">
+    <div class="row">
+      <button class="btn ghost" id="callPickContactBtn" type="button">📇 Pick contact</button>
+      <button class="btn primary" id="callGoBtn" type="button">Call</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="alarmModal">
+  <div class="modal">
+    <h2>Set alarm</h2>
+    <p class="sub">Opens your phone's real Clock app. Android only — iPhone doesn't allow this from any website.</p>
+    <label>Time</label>
+    <input type="time" id="alarmTimeInput">
+    <div class="row">
+      <button class="btn primary" id="alarmSetBtn" type="button" style="flex:1;">Set alarm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="calendarModal">
+  <div class="modal">
+    <h2>Add calendar event</h2>
+    <p class="sub">Opens Google Calendar pre-filled, defaulting to 1 hour from now — you confirm and save it there.</p>
+    <label>Event title</label>
+    <input type="text" id="calTitleInput" placeholder="e.g. Team sync">
+    <div class="row">
+      <button class="btn primary" id="calAddBtn" type="button" style="flex:1;">Add to calendar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="moreModal">
+  <div class="modal">
+    <h2>More</h2>
+
+    <label>Quick timer</label>
+    <div class="row" style="margin-top:0;">
+      <button class="btn ghost" data-min="1" type="button">1 min</button>
+      <button class="btn ghost" data-min="5" type="button">5 min</button>
+      <button class="btn ghost" data-min="10" type="button">10 min</button>
+      <button class="btn ghost" data-min="30" type="button">30 min</button>
+    </div>
+
+    <label>Notes</label>
+    <input type="text" id="quickNoteInput" placeholder="Type a note and tap Add">
+    <div class="row">
+      <button class="btn ghost" id="quickNoteAddBtn" type="button">Add note</button>
+      <button class="btn ghost" id="quickNoteReadBtn" type="button">Read notes</button>
+    </div>
+
+    <label>More actions</label>
+    <div class="row" style="margin-top:0;">
+      <button class="btn ghost" id="quickWeatherBtn" type="button">🌤️ Weather</button>
+      <button class="btn ghost" id="quickJokeBtn" type="button">😄 Joke</button>
+    </div>
+
+    <label>Open an app</label>
+    <div class="app-grid" id="appGrid"></div>
+
+    <div class="row" style="margin-top:22px;">
+      <button class="btn primary" id="quickSettingsBtn" type="button">Full settings</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* ---------------- Version — check this number in the app to confirm you're on the latest file ---------------- */
-const VOXA_VERSION = '1.3.0';
+const VOXA_VERSION = '1.4.0';
 
 /* ---------------- Utility ---------------- */
 const $ = (id) => document.getElementById(id);
@@ -542,14 +714,20 @@ if (SR) {
 
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
+function setMicUI(isListening){
+  const btn = document.getElementById('micBtn');
+  const label = document.getElementById('micLabel');
+  if (btn) btn.classList.toggle('listening', isListening);
+  if (label) label.textContent = isListening ? 'Listening…' : 'Tap to talk';
+}
+
 function listenOnce(){
   return new Promise((resolve, reject) => {
     if (!recognition) { reject('unsupported'); return; }
     let settled = false;
     recognition.onstart = () => {
       listening = true;
-      micBtn.classList.add('listening');
-      micLabel.textContent = 'Listening…';
+      setMicUI(true);
       setStatus('listening', 'listening');
     };
     recognition.onresult = (e) => {
@@ -561,8 +739,7 @@ function listenOnce(){
     };
     recognition.onend = () => {
       listening = false;
-      micBtn.classList.remove('listening');
-      micLabel.textContent = 'Tap to talk';
+      setMicUI(false);
       if (!settled) { settled = true; reject('no-result'); }
     };
     try { recognition.start(); }
@@ -570,17 +747,186 @@ function listenOnce(){
   });
 }
 
-micBtn.onclick = async () => {
-  if (!recognition) return;
-  if (loopMode) { toast('Loop is on — tap LOOP to turn it off first.'); return; }
-  if (listening) { recognition.stop(); return; }
-  try {
-    const text = await listenOnce();
-    if (text) { addLine('user', text); await handleCommand(text); }
-  } catch (err) {
-    handleListenError(err);
+/* ---------------- Voice / text-chat mode toggle ---------------- */
+const modeToggle = $('modeToggle');
+const mainBar = $('mainBar');
+const attachMenu = $('attachMenu');
+let textMode = false;
+let pendingAttachment = null;
+const voiceBarMarkup = mainBar.innerHTML;
+
+function bindVoiceBar(){
+  const btn = document.getElementById('micBtn');
+  if (!btn) return;
+  btn.onclick = async () => {
+    if (!recognition) return;
+    if (loopMode) { toast('Loop is on — tap LOOP to turn it off first.'); return; }
+    if (listening) { recognition.stop(); return; }
+    try {
+      const text = await listenOnce();
+      if (text) { addLine('user', text); await handleCommand(text); }
+    } catch (err) { handleListenError(err); }
+  };
+}
+bindVoiceBar();
+
+function renderVoiceBar(){
+  mainBar.innerHTML = voiceBarMarkup;
+  bindVoiceBar();
+}
+
+function renderTextBar(){
+  mainBar.innerHTML = `
+    <button class="attach-btn" id="attachBtn" type="button">+</button>
+    <input type="text" id="chatInput" placeholder="Message Voxa…">
+    <button class="mini-circle" id="dictateBtn" type="button">🎤</button>
+    <button class="mini-circle send-btn" id="sendBtn" type="button">➤</button>
+  `;
+  bindTextBar();
+}
+
+function bindTextBar(){
+  const input = document.getElementById('chatInput');
+  document.getElementById('attachBtn').onclick = () => attachMenu.classList.toggle('open');
+  document.getElementById('sendBtn').onclick = () => sendChatText();
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatText(); });
+  document.getElementById('dictateBtn').onclick = async () => {
+    if (!recognition) { toast('Voice not supported here'); return; }
+    try {
+      const heard = await listenOnce();
+      if (heard) input.value = (input.value ? input.value + ' ' : '') + heard;
+    } catch (err) { handleListenError(err); }
+  };
+}
+
+async function sendChatText(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  const attachment = pendingAttachment;
+  if (!text && !attachment) return;
+  if (text) addLine('user', text);
+  if (attachment) addLine('user', `📎 ${attachment.name}`);
+  input.value = '';
+  pendingAttachment = null;
+  renderAttachChip(null);
+  if (text || attachment) await handleCommand(text || 'Describe this image.', attachment);
+}
+
+modeToggle.onclick = () => {
+  textMode = !textMode;
+  modeToggle.textContent = textMode ? '🎤' : '⌨';
+  attachMenu.classList.remove('open');
+  if (textMode) {
+    if (loopMode) { loopMode = false; loopRunId++; contToggle.classList.remove('active'); if (listening) recognition.stop(); }
+    renderTextBar();
+  } else {
+    renderVoiceBar();
   }
 };
+
+function renderAttachChip(file){
+  const existing = document.getElementById('attachChip');
+  if (existing) existing.remove();
+  if (!file) return;
+  const chip = document.createElement('div');
+  chip.className = 'attach-chip';
+  chip.id = 'attachChip';
+  const label = document.createElement('span');
+  label.textContent = '📎 ' + file.name;
+  chip.appendChild(label);
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '✕';
+  removeBtn.onclick = () => { pendingAttachment = null; renderAttachChip(null); };
+  chip.appendChild(removeBtn);
+  document.querySelector('footer').insertAdjacentElement('beforebegin', chip);
+}
+
+function setupFileInput(inputId, menuBtnId){
+  const fileInput = document.getElementById(inputId);
+  document.getElementById(menuBtnId).onclick = () => { fileInput.click(); attachMenu.classList.remove('open'); };
+  fileInput.onchange = () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    pendingAttachment = { name: file.name, file };
+    renderAttachChip(file);
+  };
+}
+setupFileInput('fileCameraInput', 'attachCamera');
+setupFileInput('filePhotosInput', 'attachPhotos');
+setupFileInput('fileDocsInput', 'attachDocs');
+
+document.addEventListener('click', (e) => {
+  if (!attachMenu.contains(e.target) && e.target.id !== 'attachBtn') attachMenu.classList.remove('open');
+});
+
+/* ---------------- Quick-action grid ---------------- */
+document.querySelectorAll('.modal-backdrop').forEach((bd) => {
+  bd.addEventListener('click', (e) => { if (e.target === bd) bd.classList.remove('open'); });
+});
+
+$('quickCall').onclick = () => $('callModal').classList.add('open');
+$('quickAlarm').onclick = () => $('alarmModal').classList.add('open');
+$('quickCalendar').onclick = () => $('calendarModal').classList.add('open');
+$('quickMore').onclick = () => $('moreModal').classList.add('open');
+
+$('callGoBtn').onclick = () => {
+  const num = $('callNumberInput').value.replace(/[^\d+]/g, '');
+  if (!num) { toast('Enter a number first'); return; }
+  window.location.href = 'tel:' + num;
+  $('callModal').classList.remove('open');
+};
+$('callPickContactBtn').onclick = async () => {
+  const ok = await pickContactAndAct('call');
+  if (!ok) toast('Contact picker not available on this browser/device.');
+  else $('callModal').classList.remove('open');
+};
+
+$('alarmSetBtn').onclick = () => {
+  const val = $('alarmTimeInput').value;
+  if (!val) { toast('Pick a time first'); return; }
+  const [h, m] = val.split(':').map(Number);
+  triggerAlarm(h, m);
+  $('alarmModal').classList.remove('open');
+};
+
+$('calAddBtn').onclick = () => {
+  const title = $('calTitleInput').value.trim();
+  if (!title) { toast('Type a title first'); return; }
+  triggerCalendarAdd(title);
+  $('calendarModal').classList.remove('open');
+};
+
+document.querySelectorAll('#moreModal [data-min]').forEach((btn) => {
+  btn.onclick = () => {
+    const n = parseInt(btn.dataset.min, 10);
+    setTimeout(() => { toast(`⏰ Timer done: ${n} min`); speak(`Your ${n} minute timer is up.`); }, n*60000);
+    toast(`Timer set for ${n} min`);
+    $('moreModal').classList.remove('open');
+  };
+});
+$('quickNoteAddBtn').onclick = () => {
+  const v = $('quickNoteInput').value.trim();
+  if (!v) return;
+  notes.push(v);
+  store.set('voxa_notes', notes);
+  $('quickNoteInput').value = '';
+  toast('Note added');
+};
+$('quickNoteReadBtn').onclick = () => {
+  $('moreModal').classList.remove('open');
+  if (!notes.length) speak("You don't have any notes yet.");
+  else speak(`You have ${notes.length} note${notes.length>1?'s':''}: ${notes.join('. ')}`);
+};
+$('quickWeatherBtn').onclick = async () => {
+  $('moreModal').classList.remove('open');
+  if (!settings.city) { toast('Set a default city in Settings first'); return; }
+  await speak('Checking the weather…');
+  try { await speak(await getWeather(settings.city)); }
+  catch (e) { await speak("I couldn't fetch the weather right now."); }
+};
+$('quickJokeBtn').onclick = () => { $('moreModal').classList.remove('open'); speak(pick(JOKES)); };
+$('quickSettingsBtn').onclick = () => { $('moreModal').classList.remove('open'); $('modalBackdrop').classList.add('open'); };
 
 contToggle.onclick = () => {
   loopMode = !loopMode;
@@ -649,53 +995,64 @@ function soundsLike(text, word, maxDist=1){
 }
 
 /* ---------------- Generic app launcher ----------------
-   Logic: each app publishes a native link scheme with the OS (same mechanism Alexa
-   itself relies on for "open Spotify" etc). We try that scheme; if the app isn't
-   installed the OS just does nothing and the page stays visible, so after a short
-   delay we fall back to the web version automatically. */
+   Logic: each app publishes a native link with the OS (same mechanism Alexa
+   itself relies on for "open Spotify" etc). On Android we hand off to Chrome's
+   own intent resolver with a browser_fallback_url — Chrome decides app-vs-website
+   internally, so there's no JS guessing and no race against your tap on the
+   "Open in app?" prompt. Non-Android just tries the native scheme directly. */
 const APP_LINKS = {
-  youtube:   { scheme:'vnd.youtube://',              web:'https://youtube.com' },
-  instagram: { scheme:'instagram://app',             web:'https://instagram.com' },
-  whatsapp:  { scheme:'whatsapp://',                 web:'https://web.whatsapp.com' },
-  facebook:  { scheme:'fb://',                       web:'https://facebook.com' },
-  messenger: { scheme:'fb-messenger://',              web:'https://messenger.com' },
-  twitter:   { scheme:'twitter://',                   web:'https://x.com' },
-  x:         { scheme:'twitter://',                   web:'https://x.com' },
-  telegram:  { scheme:'tg://',                        web:'https://t.me' },
-  snapchat:  { scheme:'snapchat://',                  web:'https://snapchat.com' },
-  spotify:   { scheme:'spotify://',                   web:'https://open.spotify.com' },
-  netflix:   { scheme:'nflx://',                       web:'https://netflix.com' },
-  linkedin:  { scheme:'linkedin://',                   web:'https://linkedin.com' },
-  paytm:     { scheme:'paytmmp://',                    web:'https://paytm.com' },
-  phonepe:   { scheme:'phonepe://',                    web:'https://phonepe.com' },
-  gpay:      { scheme:'tez://upi/',                    web:'https://pay.google.com' },
-  uber:      { scheme:'uber://',                       web:'https://m.uber.com' },
-  ola:       { scheme:'olacabs://',                    web:'https://www.olacabs.com' },
-  swiggy:    { scheme:'swiggy://',                      web:'https://www.swiggy.com' },
-  zomato:    { scheme:'zomato://',                      web:'https://www.zomato.com' },
-  maps:      { scheme:null,                             web:'https://maps.google.com' },
-  photos:    { scheme:null,                             web:'https://photos.google.com' },
-  gmail:     { scheme:null,                             web:'https://mail.google.com' },
-  amazon:    { scheme:null,                             web:'https://amazon.in' },
-  github:    { scheme:null,                             web:'https://github.com' },
-  wikipedia: { scheme:null,                             web:'https://wikipedia.org' },
-  google:    { scheme:null,                             web:'https://google.com' },
+  youtube:   { package:'com.google.android.youtube',        scheme:'vnd.youtube://',  web:'https://youtube.com' },
+  instagram: { package:'com.instagram.android',              scheme:'instagram://app', web:'https://instagram.com' },
+  whatsapp:  { package:'com.whatsapp',                       scheme:'whatsapp://',     web:'https://web.whatsapp.com' },
+  facebook:  { package:'com.facebook.katana',                scheme:'fb://',           web:'https://facebook.com' },
+  messenger: { package:'com.facebook.orca',                  scheme:'fb-messenger://', web:'https://messenger.com' },
+  twitter:   { package:'com.twitter.android',                scheme:'twitter://',      web:'https://x.com' },
+  x:         { package:'com.twitter.android',                scheme:'twitter://',      web:'https://x.com' },
+  telegram:  { package:'org.telegram.messenger',             scheme:'tg://',           web:'https://t.me' },
+  snapchat:  { package:'com.snapchat.android',               scheme:'snapchat://',     web:'https://snapchat.com' },
+  spotify:   { package:'com.spotify.music',                  scheme:'spotify://',      web:'https://open.spotify.com' },
+  netflix:   { package:'com.netflix.mediaclient',            scheme:'nflx://',         web:'https://netflix.com' },
+  linkedin:  { package:'com.linkedin.android',                scheme:'linkedin://',     web:'https://linkedin.com' },
+  paytm:     { package:'net.one97.paytm',                     scheme:'paytmmp://',      web:'https://paytm.com' },
+  phonepe:   { package:'com.phonepe.app',                     scheme:'phonepe://',      web:'https://phonepe.com' },
+  gpay:      { package:'com.google.android.apps.nbu.paisa.user', scheme:'tez://upi/',   web:'https://pay.google.com' },
+  uber:      { package:'com.ubercab',                          scheme:'uber://',         web:'https://m.uber.com' },
+  ola:       { package:'com.olacabs.customer',                 scheme:'olacabs://',      web:'https://www.olacabs.com' },
+  swiggy:    { package:'in.swiggy.android',                    scheme:'swiggy://',       web:'https://www.swiggy.com' },
+  zomato:    { package:'com.application.zomato',               scheme:'zomato://',       web:'https://www.zomato.com' },
+  maps:      { web:'https://maps.google.com' },
+  photos:    { web:'https://photos.google.com' },
+  gmail:     { web:'https://mail.google.com' },
+  amazon:    { web:'https://amazon.in' },
+  github:    { web:'https://github.com' },
+  wikipedia: { web:'https://wikipedia.org' },
+  google:    { web:'https://google.com' },
 };
 
 function openApp(name){
   const app = APP_LINKS[name];
   if (!app) return false;
-  if (!app.scheme) { window.open(app.web, '_blank'); return true; }
-  let hidden = false;
-  const onVis = () => { if (document.hidden) hidden = true; };
-  document.addEventListener('visibilitychange', onVis);
-  window.location.href = app.scheme;
-  setTimeout(() => {
-    document.removeEventListener('visibilitychange', onVis);
-    if (!hidden && app.web) window.open(app.web, '_blank');
-  }, 1200);
+  if (isAndroid && app.package) {
+    // Chrome resolves this natively: tries the app by package, falls back to
+    // the URL itself if it's not installed. No JS timers, no race.
+    const fallback = encodeURIComponent(app.web);
+    window.location.href = `intent://#Intent;package=${app.package};S.browser_fallback_url=${fallback};end`;
+  } else if (app.scheme) {
+    window.location.href = app.scheme;
+  } else {
+    window.open(app.web, '_blank');
+  }
   return true;
 }
+
+const appGrid = $('appGrid');
+Object.keys(APP_LINKS).forEach((key) => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = key;
+  btn.onclick = () => { openApp(key); $('moreModal').classList.remove('open'); };
+  appGrid.appendChild(btn);
+});
 
 // Uses the native Contact Picker (Android Chrome only).
 async function pickContactAndAct(action){
@@ -727,6 +1084,25 @@ function formatClock(hour, minute){
   const suffix = hour < 12 ? 'AM' : 'PM';
   return `${h}:${String(minute).padStart(2,'0')} ${suffix}`;
 }
+function triggerAlarm(hour, minute){
+  if (!isAndroid) {
+    speak(`I can't set alarms automatically on this device — Apple doesn't allow any website to do that on iPhone. Please set ${formatClock(hour, minute)} in your Clock app.`);
+    return;
+  }
+  const uri = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=Voxa%20Alarm;end`;
+  window.location.href = uri;
+  speak(`Opening your Clock app to set an alarm for ${formatClock(hour, minute)}.`);
+}
+
+function triggerCalendarAdd(title){
+  const start = new Date(Date.now() + 60*60*1000);
+  const end = new Date(start.getTime() + 60*60*1000);
+  const fmt = (d) => d.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
+  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(start)}/${fmt(end)}`;
+  window.open(url, '_blank');
+  speak(`Opening Calendar to add "${title}". Adjust the time and save.`);
+}
+
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 function safeMath(text){
@@ -765,6 +1141,40 @@ function weatherCodeToText(code){
 }
 
 let conversationHistory = [];
+
+// Note: vision-capable model names on Groq change over time — this is wrapped
+// in a try/catch by the caller so a stale model name degrades gracefully
+// (falls back to text-only) instead of crashing the app.
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function askAIVision(question, file){
+  const base64 = await fileToBase64(file);
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.apiKey },
+    body: JSON.stringify({
+      model: 'llama-3.2-11b-vision-preview',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: question },
+          { type: 'image_url', image_url: { url: `data:${file.type};base64,${base64}` } }
+        ]
+      }],
+      max_tokens: 250
+    })
+  });
+  if (!res.ok) throw new Error('vision API error ' + res.status);
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || "I couldn't describe that image.";
+}
+
 async function askAI(question){
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -793,8 +1203,23 @@ const JOKES = [
 ];
 
 /* ---------------- Command handling ---------------- */
-async function handleCommand(raw){
+async function handleCommand(raw, attachment){
   const text = raw.toLowerCase();
+
+  if (attachment && attachment.file && attachment.file.type.startsWith('image/')) {
+    if (!settings.apiKey) {
+      await speak("I see an image attached, but I need a free AI key in Settings to look at pictures. Continuing with just your text.");
+    } else {
+      await speak('Looking at the image…');
+      try {
+        const answer = await askAIVision(raw || 'Describe this image.', attachment.file);
+        await speak(answer);
+        return;
+      } catch (e) {
+        await speak("I couldn't analyze the image just now — continuing with your text instead.");
+      }
+    }
+  }
 
   if (/^(stop|cancel|never ?mind|quiet|shut up)\b/.test(text)) {
     synth.cancel();
@@ -832,13 +1257,7 @@ async function handleCommand(raw){
   if (/set (?:an |a )?alarm/.test(text) || /wake me/.test(text)) {
     const t = parseAlarmTime(text);
     if (!t) { await speak("Tell me a time — like 'set an alarm for 7 am'."); return; }
-    if (!isAndroid) {
-      await speak(`I can't set alarms automatically on this device — Apple doesn't allow any website to do that on iPhone. Please set ${formatClock(t.hour, t.minute)} in your Clock app.`);
-      return;
-    }
-    const uri = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${t.hour};i.android.intent.extra.alarm.MINUTES=${t.minute};S.android.intent.extra.alarm.MESSAGE=Voxa%20Alarm;end`;
-    window.location.href = uri;
-    await speak(`Opening your Clock app to set an alarm for ${formatClock(t.hour, t.minute)}.`);
+    triggerAlarm(t.hour, t.minute);
     return;
   }
 
@@ -907,13 +1326,7 @@ async function handleCommand(raw){
 
   const calMatch = text.match(/(?:add (?:a )?calendar event|add to calendar|schedule)\s+(.*)/);
   if (calMatch && calMatch[1]) {
-    const title = calMatch[1];
-    const start = new Date(Date.now() + 60*60*1000);
-    const end = new Date(start.getTime() + 60*60*1000);
-    const fmt = (d) => d.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(start)}/${fmt(end)}`;
-    window.open(url, '_blank');
-    await speak(`Opening Calendar to add "${title}". Adjust the time and save.`);
+    triggerCalendarAdd(calMatch[1]);
     return;
   }
 
@@ -963,9 +1376,11 @@ async function handleCommand(raw){
 }
 
 window.addEventListener('load', () => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  }
+  try {
+    if ('serviceWorker' in navigator && navigator.serviceWorker) {
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    }
+  } catch (e) { /* ignore — offline caching is a nice-to-have, never blocks the app */ }
   $('versionBadge').textContent = 'v' + VOXA_VERSION;
   addLine('assistant', "Hi, I'm Voxa. Tap the mic and talk to me.");
 });
