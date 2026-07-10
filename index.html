@@ -302,6 +302,26 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
 
+  .timer-badge{
+    position:fixed;
+    top:calc(64px + env(safe-area-inset-top));
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--panel-2);
+    border:1px solid #262a3d;
+    color:var(--text);
+    padding:8px 14px;
+    border-radius:20px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    display:none;
+    align-items:center;
+    gap:8px;
+    z-index:25;
+    box-shadow:0 6px 18px rgba(0,0,0,0.35);
+  }
+  .timer-badge button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;}
+
   .quick-grid{
     display:flex;
     gap:12px;
@@ -328,21 +348,21 @@
   .quick-label{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;}
 
   footer{position:relative;}
-  #mainBar{flex:1;display:flex;gap:8px;align-items:center;min-width:0;}
+  #mainBar{flex:1;display:flex;gap:6px;align-items:center;min-width:0;}
   .attach-btn{
-    width:44px;height:44px;border-radius:14px;flex-shrink:0;
+    width:40px;height:40px;border-radius:13px;flex-shrink:0;
     background:var(--panel);border:1px solid #232637;color:var(--text);
-    font-size:22px;cursor:pointer;
+    font-size:20px;cursor:pointer;
   }
   #chatInput{
-    flex:1;min-width:0;height:48px;border-radius:16px;
+    flex:1 1 auto;min-width:60px;height:44px;border-radius:16px;
     background:var(--panel-2);border:1px solid #262a3d;color:var(--text);
-    padding:0 14px;font-size:14px;font-family:'Inter',sans-serif;
+    padding:0 12px;font-size:14px;font-family:'Inter',sans-serif;
   }
   .mini-circle{
-    width:44px;height:44px;border-radius:50%;flex-shrink:0;
+    width:40px;height:40px;border-radius:50%;flex-shrink:0;
     background:var(--panel);border:1px solid #232637;color:var(--text);
-    font-size:18px;cursor:pointer;
+    font-size:16px;cursor:pointer;
   }
   .mini-circle.send-btn{background:var(--violet);border:none;color:#fff;}
   .attach-menu{
@@ -392,6 +412,11 @@
     <div class="brand"><span class="dot"></span>Voxa <span class="version-badge" id="versionBadge">v0.0.0</span></div>
     <div class="icon-btn" id="settingsBtn">⚙</div>
   </header>
+
+  <div class="timer-badge" id="timerBadge" style="display:none;">
+    <span>⏰</span><span id="timerText">00:00</span>
+    <button id="timerCancelBtn" type="button">✕</button>
+  </div>
 
   <div class="stage">
     <div class="status" id="statusText">tap the mic to talk</div>
@@ -566,7 +591,7 @@
 
 <script>
 /* ---------------- Version — check this number in the app to confirm you're on the latest file ---------------- */
-const VOXA_VERSION = '1.4.0';
+const VOXA_VERSION = '1.5.0';
 
 /* ---------------- Utility ---------------- */
 const $ = (id) => document.getElementById(id);
@@ -818,8 +843,10 @@ modeToggle.onclick = () => {
   attachMenu.classList.remove('open');
   if (textMode) {
     if (loopMode) { loopMode = false; loopRunId++; contToggle.classList.remove('active'); if (listening) recognition.stop(); }
+    contToggle.style.display = 'none'; // LOOP is voice-only — hide it to give the input real width
     renderTextBar();
   } else {
+    contToggle.style.display = '';
     renderVoiceBar();
   }
 };
@@ -900,7 +927,7 @@ $('calAddBtn').onclick = () => {
 document.querySelectorAll('#moreModal [data-min]').forEach((btn) => {
   btn.onclick = () => {
     const n = parseInt(btn.dataset.min, 10);
-    setTimeout(() => { toast(`⏰ Timer done: ${n} min`); speak(`Your ${n} minute timer is up.`); }, n*60000);
+    startCountdown(n*60000, `Your ${n} minute timer is up.`);
     toast(`Timer set for ${n} min`);
     $('moreModal').classList.remove('open');
   };
@@ -1036,7 +1063,7 @@ function openApp(name){
     // Chrome resolves this natively: tries the app by package, falls back to
     // the URL itself if it's not installed. No JS timers, no race.
     const fallback = encodeURIComponent(app.web);
-    window.location.href = `intent://#Intent;package=${app.package};S.browser_fallback_url=${fallback};end`;
+    window.location.href = `intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${app.package};S.browser_fallback_url=${fallback};end`;
   } else if (app.scheme) {
     window.location.href = app.scheme;
   } else {
@@ -1089,9 +1116,12 @@ function triggerAlarm(hour, minute){
     speak(`I can't set alarms automatically on this device — Apple doesn't allow any website to do that on iPhone. Please set ${formatClock(hour, minute)} in your Clock app.`);
     return;
   }
-  const uri = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=Voxa%20Alarm;end`;
+  const fallback = encodeURIComponent('https://www.google.com/search?q=how+to+set+an+alarm');
+  const uri = `intent://#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};S.android.intent.extra.alarm.MESSAGE=Voxa%20Alarm;B.android.intent.extra.alarm.SKIP_UI=true;S.browser_fallback_url=${fallback};end`;
   window.location.href = uri;
-  speak(`Opening your Clock app to set an alarm for ${formatClock(hour, minute)}.`);
+  // Honest wording: JS has no way to confirm the Clock app actually saved this —
+  // this is an unofficial Android trick, and support varies by phone brand/Clock app.
+  speak(`Trying to set an alarm for ${formatClock(hour, minute)}. If your Clock app doesn't open or the alarm isn't there, your phone's Clock app doesn't support this — you'll need to set it manually this time.`);
 }
 
 function triggerCalendarAdd(title){
@@ -1104,6 +1134,43 @@ function triggerCalendarAdd(title){
 }
 
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* ---------------- Countdown timer (visible, ticking, cancellable) ---------------- */
+let timerInterval = null;
+let timerTimeoutId = null;
+let timerEndTime = null;
+
+function startCountdown(ms, doneMessage){
+  clearCountdown();
+  timerEndTime = Date.now() + ms;
+  const badge = document.getElementById('timerBadge');
+  if (badge) badge.style.display = 'flex';
+  tickCountdown();
+  timerInterval = setInterval(tickCountdown, 1000);
+  timerTimeoutId = setTimeout(() => {
+    clearCountdown();
+    toast('⏰ ' + doneMessage);
+    speak(doneMessage);
+  }, ms);
+}
+function tickCountdown(){
+  const remaining = Math.max(0, timerEndTime - Date.now());
+  const totalSec = Math.ceil(remaining / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  const text = document.getElementById('timerText');
+  if (text) text.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function clearCountdown(){
+  if (timerInterval) clearInterval(timerInterval);
+  if (timerTimeoutId) clearTimeout(timerTimeoutId);
+  timerInterval = null;
+  timerTimeoutId = null;
+  const badge = document.getElementById('timerBadge');
+  if (badge) badge.style.display = 'none';
+}
+const timerCancelBtn = document.getElementById('timerCancelBtn');
+if (timerCancelBtn) timerCancelBtn.onclick = () => { clearCountdown(); toast('Timer cancelled'); };
 
 function safeMath(text){
   let t = text
@@ -1266,10 +1333,7 @@ async function handleCommand(raw, attachment){
     const n = parseInt(timerMatch[1]);
     const unit = timerMatch[2];
     const ms = unit.startsWith('sec') ? n*1000 : unit.startsWith('min') ? n*60000 : n*3600000;
-    setTimeout(() => {
-      toast(`⏰ Timer done: ${n} ${unit}${n>1?'s':''}`);
-      speak(`Your ${n} ${unit} timer is up.`);
-    }, ms);
+    startCountdown(ms, `Your ${n} ${unit}${n>1?'s':''} timer is up.`);
     await speak(`Timer set for ${n} ${unit}${n>1?'s':''}.`);
     return;
   }
