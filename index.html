@@ -79,8 +79,28 @@
   }
   .icon-btn:active{background:var(--panel-2);}
 
-  .stage{
+  .pinned-top{
+    flex-shrink:0;
+    display:none;
+    flex-direction:column;
+  }
+  .pinned-top.active{display:flex;}
+  .pinned-top .quick-grid{
+    position:static;
+  }
+  .scroll-region{
     flex:1;
+    min-height:0;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .scroll-region::-webkit-scrollbar{display:none;}
+  .stage{
+    flex-shrink:0;
+    min-height:360px;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -124,14 +144,10 @@
     max-width:640px;
     margin:0 auto;
     padding:0 20px 14px;
-    max-height:34vh;
-    overflow-y:auto;
     display:flex;
     flex-direction:column;
     gap:10px;
-    scrollbar-width:none;
   }
-  .transcript::-webkit-scrollbar{display:none;}
   .line{
     font-size:14px;
     line-height:1.45;
@@ -309,6 +325,18 @@
     gap:14px;
     width:100%;
   }
+  .active-card.overlay{
+    position:fixed;
+    inset:0;
+    z-index:40;
+    justify-content:center;
+    background:radial-gradient(120% 100% at 50% -10%, #171a26 0%, var(--bg) 55%);
+    padding:calc(18px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  }
+  .active-card.overlay .active-label{font-size:14px;}
+  .active-card.overlay .active-digits{font-size:52px;}
+  .active-card.overlay .active-ring-wrap{width:280px;height:280px;}
+  .active-card.overlay .active-ring{width:280px;height:280px;}
   .active-label{
     font-family:'JetBrains Mono',monospace;
     font-size:12px;
@@ -388,10 +416,14 @@
   .quick-grid{
     display:flex;
     gap:12px;
-    padding:0 20px 16px;
+    padding:10px 20px 16px;
     max-width:640px;
     margin:0 auto;
     width:100%;
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:var(--bg);
   }
   .quick-btn{
     flex:1;
@@ -467,49 +499,147 @@
     background:var(--panel-2);border:1px solid #232637;color:var(--text);
     padding:8px 12px;border-radius:20px;cursor:pointer;
   }
+
+  .sidebar-backdrop{
+    position:fixed;inset:0;
+    background:rgba(6,7,12,0.55);
+    backdrop-filter:blur(2px);
+    display:none;
+    z-index:25;
+  }
+  .sidebar-backdrop.open{display:block;}
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;
+    width:300px;max-width:85vw;
+    background:var(--panel);
+    border-right:1px solid #232637;
+    display:flex;flex-direction:column;
+    transform:translateX(-100%);
+    transition:transform 0.25s ease;
+    z-index:26;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  }
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-head{padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;border-bottom:1px solid #1e2130;}
+  .sidebar-head-row{display:flex;align-items:center;justify-content:space-between;}
+  .sidebar-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;}
+  .new-chat-btn{
+    display:flex;align-items:center;gap:8px;justify-content:center;
+    padding:11px;border-radius:14px;border:1px solid #262a3d;
+    background:var(--panel-2);color:var(--text);
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;
+  }
+  .new-chat-btn:active{background:#20233350;}
+  .sidebar-search{
+    width:100%;background:var(--panel-2);border:1px solid #262a3d;color:var(--text);
+    padding:10px 12px;border-radius:12px;font-size:13px;font-family:'Inter',sans-serif;
+  }
+  .sidebar-list{flex:1;min-height:0;overflow-y:auto;padding:4px 10px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .sidebar-list::-webkit-scrollbar{display:none;}
+  .sidebar-group-label{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;
+    color:var(--muted);padding:14px 8px 6px;
+  }
+  .sidebar-item{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 10px;border-radius:12px;cursor:pointer;margin-bottom:2px;
+  }
+  .sidebar-item:active{background:var(--panel-2);}
+  .sidebar-item.active{background:rgba(124,92,255,0.16);}
+  .sidebar-item-body{flex:1;min-width:0;}
+  .sidebar-item-title{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sidebar-item-preview{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+  .sidebar-item-del{
+    flex-shrink:0;width:26px;height:26px;border-radius:8px;border:none;background:transparent;
+    color:var(--muted);font-size:13px;cursor:pointer;
+  }
+  .sidebar-item-del:active{background:#1e2130;}
+  .sidebar-empty{color:var(--muted);font-size:12.5px;padding:20px 10px;text-align:center;line-height:1.6;}
+
+  .sidebar-foot{
+    flex-shrink:0;border-top:1px solid #1e2130;padding:8px;
+  }
+  .sidebar-foot-item{
+    display:flex;align-items:center;gap:10px;
+    padding:11px 10px;border-radius:12px;cursor:pointer;color:var(--text);
+    font-size:13.5px;font-family:'Inter',sans-serif;
+  }
+  .sidebar-foot-item:active{background:var(--panel-2);}
+  .sidebar-foot-icon{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--panel-2);border:1px solid #232637;
+    display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+  }
+  .sidebar-foot-sub{font-size:11px;color:var(--muted);}
+
+  .slide-stop-track{
+    position:relative;width:100%;max-width:280px;height:56px;
+    border-radius:28px;background:var(--panel-2);border:1px solid #262a3d;
+    display:flex;align-items:center;touch-action:none;margin:0 auto;
+  }
+  .slide-stop-label{
+    position:absolute;left:0;right:0;text-align:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;color:var(--muted);
+    pointer-events:none;
+  }
+  .slide-stop-handle{
+    position:absolute;left:4px;top:4px;width:48px;height:48px;border-radius:50%;
+    background:linear-gradient(135deg, var(--danger), #E14B4B);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;
+    box-shadow:0 4px 14px rgba(255,107,107,0.4);
+    cursor:grab;
+  }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <div class="brand"><span class="dot"></span>Voxa <span class="version-badge" id="versionBadge">v0.0.0</span></div>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+      <div class="icon-btn" id="sidebarBtn">☰</div>
+      <div class="brand"><span class="dot"></span>Voxa <span class="version-badge" id="versionBadge">v0.0.0</span></div>
+    </div>
     <div class="icon-btn" id="settingsBtn">⚙</div>
   </header>
 
-  <div class="stage">
-    <div class="status" id="statusText">tap the mic to talk</div>
-    <div class="orb-wrap" id="orbWrap">
-      <svg class="orb" viewBox="0 0 240 240">
-        <circle class="ring" id="ring1" cx="120" cy="120" r="60" stroke="#7C5CFF" stroke-opacity="0.35"/>
-        <circle class="ring" id="ring2" cx="120" cy="120" r="82" stroke="#7C5CFF" stroke-opacity="0.22"/>
-        <circle class="ring" id="ring3" cx="120" cy="120" r="104" stroke="#35E1D0" stroke-opacity="0.14"/>
-        <circle class="core" id="core" cx="120" cy="120" r="26"/>
-      </svg>
-    </div>
+  <div class="pinned-top" id="pinnedTop"></div>
 
-    <div class="active-card" id="activeCard" style="display:none;">
-      <div class="active-label" id="activeLabel">TIMER</div>
-      <div class="active-ring-wrap">
-        <svg class="active-ring" viewBox="0 0 240 240">
-          <circle class="active-ring-bg" cx="120" cy="120" r="104"/>
-          <circle class="active-ring-fg" id="activeRingFg" cx="120" cy="120" r="104"/>
+  <div class="scroll-region" id="scrollRegion">
+    <div class="stage" id="stageBlock">
+      <div class="status" id="statusText">tap the mic to talk</div>
+      <div class="orb-wrap" id="orbWrap">
+        <svg class="orb" viewBox="0 0 240 240">
+          <circle class="ring" id="ring1" cx="120" cy="120" r="60" stroke="#7C5CFF" stroke-opacity="0.35"/>
+          <circle class="ring" id="ring2" cx="120" cy="120" r="82" stroke="#7C5CFF" stroke-opacity="0.22"/>
+          <circle class="ring" id="ring3" cx="120" cy="120" r="104" stroke="#35E1D0" stroke-opacity="0.14"/>
+          <circle class="core" id="core" cx="120" cy="120" r="26"/>
         </svg>
-        <div class="active-digits" id="activeDigits">00:00</div>
       </div>
-      <div class="active-sub" id="activeSub"></div>
-      <div class="active-controls" id="activeControls"></div>
-      <div class="lap-list" id="lapList"></div>
+
+      <div class="active-card" id="activeCard" style="display:none;">
+        <div class="active-label" id="activeLabel">TIMER</div>
+        <div class="active-ring-wrap">
+          <svg class="active-ring" viewBox="0 0 240 240">
+            <circle class="active-ring-bg" cx="120" cy="120" r="104"/>
+            <circle class="active-ring-fg" id="activeRingFg" cx="120" cy="120" r="104"/>
+          </svg>
+          <div class="active-digits" id="activeDigits">00:00</div>
+        </div>
+        <div class="active-sub" id="activeSub"></div>
+        <div class="active-controls" id="activeControls"></div>
+        <div class="lap-list" id="lapList"></div>
+      </div>
     </div>
+
+    <div class="quick-grid" id="quickGridBlock">
+      <div class="quick-btn" id="quickCall"><span class="quick-icon">📞</span><span class="quick-label">CALL</span></div>
+      <div class="quick-btn" id="quickAlarm"><span class="quick-icon">⏰</span><span class="quick-label">CLOCK</span></div>
+      <div class="quick-btn" id="quickCalendar"><span class="quick-icon">📅</span><span class="quick-label">CALENDAR</span></div>
+      <div class="quick-btn" id="quickMore"><span class="quick-icon">⋯</span><span class="quick-label">OTHERS</span></div>
+    </div>
+
+    <div class="transcript" id="transcript"></div>
   </div>
 
-  <div class="quick-grid">
-    <div class="quick-btn" id="quickCall"><span class="quick-icon">📞</span><span class="quick-label">CALL</span></div>
-    <div class="quick-btn" id="quickAlarm"><span class="quick-icon">⏰</span><span class="quick-label">CLOCK</span></div>
-    <div class="quick-btn" id="quickCalendar"><span class="quick-icon">📅</span><span class="quick-label">CALENDAR</span></div>
-    <div class="quick-btn" id="quickMore"><span class="quick-icon">⋯</span><span class="quick-label">OTHERS</span></div>
-  </div>
-
-  <div class="transcript" id="transcript"></div>
 
   <footer>
     <button class="cont-toggle" id="contToggle" title="Loop mode">LOOP</button>
@@ -528,6 +658,25 @@
     <input type="file" id="filePhotosInput" accept="image/*" style="display:none;">
     <input type="file" id="fileDocsInput" style="display:none;">
   </footer>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-head-row">
+      <div class="sidebar-title">Chats</div>
+      <div class="icon-btn" id="sidebarCloseBtn" style="width:32px;height:32px;">✕</div>
+    </div>
+    <div class="new-chat-btn" id="newChatBtn">+ New chat</div>
+    <input type="text" class="sidebar-search" id="sidebarSearch" placeholder="Search chats">
+  </div>
+  <div class="sidebar-list" id="sidebarList"></div>
+  <div class="sidebar-foot">
+    <div class="sidebar-foot-item" id="sidebarSettingsBtn">
+      <span class="sidebar-foot-icon">⚙</span>
+      <span>Settings</span>
+    </div>
+  </div>
 </div>
 
 <div class="modal-backdrop" id="modalBackdrop">
@@ -563,10 +712,6 @@
       <option value="bell">Bell</option>
       <option value="digital">Digital</option>
     </select>
-
-    <label>Installed apps</label>
-    <p class="sub" style="margin-bottom:8px;">Browsers can't see your installed apps — there's no such permission on any website. Check off what you actually have, once, and Voxa will open the real app instead of the website for those.</p>
-    <div id="installedAppsList" class="commands-list"></div>
 
     <div class="row">
       <button class="btn ghost" id="clearNotesBtn" type="button">Clear notes</button>
@@ -616,7 +761,7 @@
 <div class="modal-backdrop" id="alarmModal">
   <div class="modal">
     <h2>Set alarm</h2>
-    <p class="sub">Rings and sends a notification while Voxa stays open in a tab — this works on Android and iPhone, but the app needs to stay running (not fully closed) to go off.</p>
+    <p class="sub">Rings full-screen and sends a notification while Voxa stays open in a tab — the screen will stay awake once it's counting down. This works on Android and iPhone, but the app needs to stay running (not fully closed) to go off.</p>
     <label>Time</label>
     <input type="time" id="alarmTimeInput">
     <label>Note (optional)</label>
@@ -658,6 +803,13 @@
       <button class="btn ghost" data-min="30" type="button">30 min</button>
     </div>
 
+    <label>Custom timer</label>
+    <div class="row" style="margin-top:0;">
+      <input type="number" id="customTimerMin" placeholder="Min" min="0" inputmode="numeric" style="flex:1;">
+      <input type="number" id="customTimerSec" placeholder="Sec" min="0" max="59" inputmode="numeric" style="flex:1;">
+      <button class="btn primary" id="customTimerStartBtn" type="button" style="flex:1;">Start</button>
+    </div>
+
     <label>Notes</label>
     <input type="text" id="quickNoteInput" placeholder="Type a note and tap Add">
     <div class="row">
@@ -685,7 +837,7 @@
 
 <script>
 /* ---------------- Version — check this number in the app to confirm you're on the latest file ---------------- */
-const VOXA_VERSION = '1.6.0';
+const VOXA_VERSION = '1.10.0';
 
 /* ---------------- Utility ---------------- */
 const $ = (id) => document.getElementById(id);
@@ -716,7 +868,8 @@ function addLine(role, text){
   body.textContent = text;
   div.appendChild(body);
   transcriptEl.appendChild(div);
-  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  const region = document.getElementById('scrollRegion');
+  if (region) region.scrollTop = region.scrollHeight;
 }
 
 function setStatus(state, text){
@@ -732,8 +885,7 @@ const store = {
 };
 
 let settings = store.get('voxa_settings', {
-  city:'', apiKey:'', voiceKey:'', notifSound:'default',
-  installedApps: { whatsapp:true, youtube:true, spotify:true, instagram:true }
+  city:'', apiKey:'', voiceKey:'', notifSound:'default'
 });
 let notes = store.get('voxa_notes', []);
 
@@ -749,10 +901,6 @@ $('saveSettingsBtn').onclick = () => {
   settings.apiKey = $('apiKeyInput').value.trim();
   settings.voiceKey = $('voiceSelect').value;
   settings.notifSound = $('defaultSoundSelect').value;
-  settings.installedApps = settings.installedApps || {};
-  document.querySelectorAll('#installedAppsList input[type=checkbox]').forEach((cb) => {
-    settings.installedApps[cb.dataset.app] = cb.checked;
-  });
   store.set('voxa_settings', settings);
   $('modalBackdrop').classList.remove('open');
   toast('Settings saved');
@@ -767,6 +915,182 @@ $('clearNotesBtn').onclick = () => {
 $('pickContactBtn').onclick = async () => {
   const ok = await pickContactAndAct('call');
   if (!ok) toast('Contact picker not available on this browser/device.');
+};
+
+/* ---------------- Chat sessions & sidebar ---------------- */
+const sidebarEl = $('sidebar');
+const sidebarBackdropEl = $('sidebarBackdrop');
+const sidebarListEl = $('sidebarList');
+const sidebarSearchEl = $('sidebarSearch');
+
+function loadSessions(){ return store.get('voxa_sessions', []); }
+function saveSessions(list){ store.set('voxa_sessions', list); }
+
+let sessions = loadSessions();
+let currentSessionId = store.get('voxa_current_session_id', null);
+
+function findSession(id){ return sessions.find((s) => s.id === id) || null; }
+
+function makeSessionTitle(text){
+  const t = (text || '').trim();
+  if (!t) return 'New chat';
+  return t.length > 42 ? t.slice(0, 42).trim() + '…' : t;
+}
+
+function createSession(){
+  const s = {
+    id: 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    title: 'New chat',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    messages: []
+  };
+  sessions.unshift(s);
+  saveSessions(sessions);
+  currentSessionId = s.id;
+  store.set('voxa_current_session_id', currentSessionId);
+  return s;
+}
+
+// Returns the active session, silently creating one if none exists yet
+// (first-ever launch) — this is infrastructure, not a user-initiated "new chat".
+function getCurrentSession(){
+  let s = findSession(currentSessionId);
+  if (!s) s = createSession();
+  return s;
+}
+
+// Records a message into the current session's history. Does not touch the
+// DOM — addLine() handles rendering; this only handles persistence + sidebar refresh.
+function persistMessage(role, text){
+  const s = getCurrentSession();
+  s.messages.push({ role, text, ts: Date.now() });
+  s.updatedAt = Date.now();
+  if (s.title === 'New chat' && role === 'user') s.title = makeSessionTitle(text);
+  sessions.sort((a, b) => b.updatedAt - a.updatedAt);
+  saveSessions(sessions);
+  renderSidebarList();
+}
+
+// Adds a line to the transcript AND records it in the current session — use this
+// instead of addLine() for anything that should survive a reload / show in the sidebar.
+function appendMessage(role, text){
+  addLine(role, text);
+  persistMessage(role, text);
+}
+
+function clearTranscriptUI(){
+  transcriptEl.innerHTML = '';
+}
+
+function startNewChat(){
+  if (synth) synth.cancel();
+  createSession();
+  clearTranscriptUI();
+  conversationHistory = [];
+  appendMessage('assistant', "Hi, I'm Voxa. Tap the mic and talk to me.");
+  closeSidebar();
+}
+
+function switchToSession(id){
+  const s = findSession(id);
+  if (!s) return;
+  currentSessionId = s.id;
+  store.set('voxa_current_session_id', currentSessionId);
+  clearTranscriptUI();
+  s.messages.forEach((m) => addLine(m.role, m.text));
+  // Rebuild the short AI-context window from this session's tail.
+  conversationHistory = s.messages.slice(-10).map((m) => ({ role: m.role, content: m.text }));
+  closeSidebar();
+  renderSidebarList();
+}
+
+function deleteSession(id, ev){
+  if (ev) ev.stopPropagation();
+  sessions = sessions.filter((s) => s.id !== id);
+  saveSessions(sessions);
+  if (id === currentSessionId) {
+    if (sessions.length) switchToSession(sessions[0].id);
+    else startNewChat();
+  } else {
+    renderSidebarList();
+  }
+}
+
+function monthLabel(ts){
+  return new Date(ts).toLocaleDateString([], { month: 'long', year: 'numeric' });
+}
+
+function renderSidebarList(){
+  const q = (sidebarSearchEl.value || '').trim().toLowerCase();
+  let list = sessions;
+  if (q) {
+    list = sessions.filter((s) => {
+      if (s.title.toLowerCase().includes(q)) return true;
+      return s.messages.some((m) => m.text.toLowerCase().includes(q));
+    });
+  }
+  sidebarListEl.innerHTML = '';
+  if (!list.length) {
+    const empty = document.createElement('div');
+    empty.className = 'sidebar-empty';
+    empty.textContent = q ? 'No chats match your search.' : 'No chats yet — start one!';
+    sidebarListEl.appendChild(empty);
+    return;
+  }
+  let lastGroup = null;
+  list.forEach((s) => {
+    const group = monthLabel(s.createdAt);
+    if (group !== lastGroup) {
+      const label = document.createElement('div');
+      label.className = 'sidebar-group-label';
+      label.textContent = group;
+      sidebarListEl.appendChild(label);
+      lastGroup = group;
+    }
+    const item = document.createElement('div');
+    item.className = 'sidebar-item' + (s.id === currentSessionId ? ' active' : '');
+    const body = document.createElement('div');
+    body.className = 'sidebar-item-body';
+    const title = document.createElement('div');
+    title.className = 'sidebar-item-title';
+    title.textContent = s.title;
+    const preview = document.createElement('div');
+    preview.className = 'sidebar-item-preview';
+    const lastMsg = s.messages[s.messages.length - 1];
+    preview.textContent = lastMsg ? lastMsg.text : '';
+    body.appendChild(title);
+    body.appendChild(preview);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'sidebar-item-del';
+    delBtn.type = 'button';
+    delBtn.textContent = '✕';
+    delBtn.onclick = (e) => deleteSession(s.id, e);
+    item.appendChild(body);
+    item.appendChild(delBtn);
+    item.onclick = () => switchToSession(s.id);
+    sidebarListEl.appendChild(item);
+  });
+}
+
+function openSidebar(){
+  renderSidebarList();
+  sidebarEl.classList.add('open');
+  sidebarBackdropEl.classList.add('open');
+}
+function closeSidebar(){
+  sidebarEl.classList.remove('open');
+  sidebarBackdropEl.classList.remove('open');
+}
+
+$('sidebarBtn').onclick = openSidebar;
+$('sidebarCloseBtn').onclick = closeSidebar;
+sidebarBackdropEl.onclick = closeSidebar;
+$('newChatBtn').onclick = startNewChat;
+sidebarSearchEl.addEventListener('input', renderSidebarList);
+$('sidebarSettingsBtn').onclick = () => {
+  closeSidebar();
+  $('modalBackdrop').classList.add('open');
 };
 
 /* ---------------- Speech Synthesis (with saved voice choice) ---------------- */
@@ -808,7 +1132,7 @@ $('testVoiceBtn').onclick = () => speak("Hi, this is how I'll sound.");
 
 function speak(text){
   return new Promise((resolve) => {
-    addLine('assistant', text);
+    appendMessage('assistant', text);
     if (!synth) { resolve(); return; }
     synth.cancel();
     const utter = new SpeechSynthesisUtterance(text);
@@ -892,7 +1216,7 @@ function bindVoiceBar(){
     if (listening) { recognition.stop(); return; }
     try {
       const text = await listenOnce();
-      if (text) { addLine('user', text); await handleCommand(text); }
+      if (text) { appendMessage('user', text); await handleCommand(text); }
     } catch (err) { handleListenError(err); }
   };
 }
@@ -932,12 +1256,16 @@ async function sendChatText(){
   const text = input.value.trim();
   const attachment = pendingAttachment;
   if (!text && !attachment) return;
-  if (text) addLine('user', text);
-  if (attachment) addLine('user', `📎 ${attachment.name}`);
+  if (text) appendMessage('user', text);
+  if (attachment) appendMessage('user', `📎 ${attachment.name}`);
   input.value = '';
   pendingAttachment = null;
   renderAttachChip(null);
-  if (text || attachment) await handleCommand(text || 'Describe this image.', attachment);
+  if (text || attachment) {
+    const defaultPrompt = attachment && attachment.file && attachment.file.type.startsWith('image/')
+      ? 'Describe this image.' : 'Summarize this document.';
+    await handleCommand(text || defaultPrompt, attachment);
+  }
 }
 
 modeToggle.onclick = () => {
@@ -1041,6 +1369,21 @@ document.querySelectorAll('#moreModal [data-min]').forEach((btn) => {
     $('moreModal').classList.remove('open');
   };
 });
+$('customTimerStartBtn').onclick = () => {
+  const min = parseInt($('customTimerMin').value, 10) || 0;
+  const sec = parseInt($('customTimerSec').value, 10) || 0;
+  const totalMs = (min * 60 + sec) * 1000;
+  if (totalMs <= 0) { toast('Enter a minutes or seconds value first.'); return; }
+  const parts = [];
+  if (min > 0) parts.push(`${min} min`);
+  if (sec > 0) parts.push(`${sec} sec`);
+  const label = parts.join(' ');
+  startTimerUI(totalMs, `Your ${label} timer is up.`);
+  toast(`Timer set for ${label}`);
+  $('customTimerMin').value = '';
+  $('customTimerSec').value = '';
+  $('moreModal').classList.remove('open');
+};
 $('quickStopwatchBtn').onclick = () => {
   startStopwatchUI();
   $('moreModal').classList.remove('open');
@@ -1095,7 +1438,7 @@ async function runLoop(myRunId){
     }
     if (myRunId !== loopRunId) return;
     if (text) {
-      addLine('user', text);
+      appendMessage('user', text);
       await handleCommand(text);
     }
     if (myRunId !== loopRunId || !loopMode) return;
@@ -1135,50 +1478,51 @@ function soundsLike(text, word, maxDist=1){
 }
 
 /* ---------------- Generic app launcher ----------------
-   Logic: browsers deliberately cannot see which apps are installed — that's a
-   privacy boundary every website runs into, not something to guess around. So
-   instead of guessing, we ask you once (see "Installed apps" in Settings) and
-   remember the answer: if you've checked an app, we go straight to its native
-   link; otherwise we open the website. Deterministic, no races, no silent
-   wrong guesses. */
+   Real fix, not a guess: plain https:// links to services like YouTube,
+   Instagram, Spotify, and WhatsApp already auto-redirect to the installed
+   native app — that's Android/iOS's own "Verified Links" system doing OS-level
+   interception, completely independent of any JS here. That's why these
+   worked from the very first version with zero special code.
+   Trying to force a bare custom scheme (phonepe://, linkedin://, etc.)
+   directly is what caused apps to flash open and instantly close — those
+   apps expect a specific path/parameters after the scheme, not a bare
+   scheme, and firing an incomplete deep link left a broken half-launched
+   activity behind. So: always open the real web URL. For apps with Verified
+   Links configured, the OS takes over silently. For apps without it, this is
+   a safe, working fallback instead of a broken native-launch attempt. */
 const APP_LINKS = {
-  youtube:   { scheme:'vnd.youtube://',  web:'https://youtube.com' },
-  instagram: { scheme:'instagram://app', web:'https://instagram.com' },
-  whatsapp:  { scheme:'whatsapp://',     web:'https://web.whatsapp.com' },
-  facebook:  { scheme:'fb://',           web:'https://facebook.com' },
-  messenger: { scheme:'fb-messenger://', web:'https://messenger.com' },
-  twitter:   { scheme:'twitter://',      web:'https://x.com' },
-  x:         { scheme:'twitter://',      web:'https://x.com' },
-  telegram:  { scheme:'tg://',           web:'https://t.me' },
-  snapchat:  { scheme:'snapchat://',     web:'https://snapchat.com' },
-  spotify:   { scheme:'spotify://',      web:'https://open.spotify.com' },
-  netflix:   { scheme:'nflx://',         web:'https://netflix.com' },
-  linkedin:  { scheme:'linkedin://',     web:'https://linkedin.com' },
-  paytm:     { scheme:'paytmmp://',      web:'https://paytm.com' },
-  phonepe:   { scheme:'phonepe://',      web:'https://phonepe.com' },
-  gpay:      { scheme:'tez://upi/',      web:'https://pay.google.com' },
-  uber:      { scheme:'uber://',         web:'https://m.uber.com' },
-  ola:       { scheme:'olacabs://',      web:'https://www.olacabs.com' },
-  swiggy:    { scheme:'swiggy://',       web:'https://www.swiggy.com' },
-  zomato:    { scheme:'zomato://',       web:'https://www.zomato.com' },
-  maps:      { web:'https://maps.google.com' },
-  photos:    { web:'https://photos.google.com' },
-  gmail:     { web:'https://mail.google.com' },
-  amazon:    { web:'https://amazon.in' },
-  github:    { web:'https://github.com' },
-  wikipedia: { web:'https://wikipedia.org' },
-  google:    { web:'https://google.com' },
+  youtube:   'https://youtube.com',
+  instagram: 'https://instagram.com',
+  whatsapp:  'https://web.whatsapp.com',
+  facebook:  'https://facebook.com',
+  messenger: 'https://messenger.com',
+  twitter:   'https://x.com',
+  x:         'https://x.com',
+  telegram:  'https://t.me',
+  snapchat:  'https://snapchat.com',
+  spotify:   'https://open.spotify.com',
+  netflix:   'https://netflix.com',
+  linkedin:  'https://linkedin.com',
+  paytm:     'https://paytm.com',
+  phonepe:   'https://phonepe.com',
+  gpay:      'https://pay.google.com',
+  uber:      'https://m.uber.com',
+  ola:       'https://www.olacabs.com',
+  swiggy:    'https://www.swiggy.com',
+  zomato:    'https://www.zomato.com',
+  maps:      'https://maps.google.com',
+  photos:    'https://photos.google.com',
+  gmail:     'https://mail.google.com',
+  amazon:    'https://amazon.in',
+  github:    'https://github.com',
+  wikipedia: 'https://wikipedia.org',
+  google:    'https://google.com',
 };
 
 function openApp(name){
-  const app = APP_LINKS[name];
-  if (!app) return false;
-  const installed = settings.installedApps && settings.installedApps[name];
-  if (installed && app.scheme) {
-    window.location.href = app.scheme;
-  } else {
-    window.open(app.web, '_blank');
-  }
+  const web = APP_LINKS[name];
+  if (!web) return false;
+  window.open(web, '_blank');
   return true;
 }
 
@@ -1189,23 +1533,6 @@ Object.keys(APP_LINKS).forEach((key) => {
   btn.textContent = key;
   btn.onclick = () => { openApp(key); $('moreModal').classList.remove('open'); };
   appGrid.appendChild(btn);
-});
-
-// Populate the "Installed apps" checklist in Settings — only for apps that
-// actually have a native scheme to offer (pure-web entries have nothing to toggle).
-const installedAppsList = $('installedAppsList');
-Object.keys(APP_LINKS).forEach((key) => {
-  if (!APP_LINKS[key].scheme) return;
-  const label = document.createElement('label');
-  label.className = 'chip-check';
-  const cb = document.createElement('input');
-  cb.type = 'checkbox';
-  cb.dataset.app = key;
-  cb.checked = !!(settings.installedApps && settings.installedApps[key]);
-  const span = document.createElement('span');
-  span.textContent = key;
-  label.append(cb, span);
-  installedAppsList.appendChild(label);
 });
 
 // Uses the native Contact Picker (Android Chrome only).
@@ -1288,6 +1615,53 @@ function updateDigits(ms){
   const el = document.getElementById('activeDigits');
   if (el) el.textContent = text;
 }
+/* ---- Screen wake lock — keeps the display on while an alarm/timer is full-screen ---- */
+let wakeLock = null;
+async function acquireWakeLock(){
+  try {
+    if (!('wakeLock' in navigator)) return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) { /* not supported, or page not visible — fails silently, alarm still works */ }
+}
+async function releaseWakeLock(){
+  try { if (wakeLock) { await wakeLock.release(); wakeLock = null; } } catch (e) {}
+}
+// Wake locks are auto-released when a tab is backgrounded; re-acquire on return
+// if an alarm or timer is still the active full-screen view.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && (activeMode === 'alarm' || activeMode === 'timer') && !wakeLock) {
+    acquireWakeLock();
+  }
+});
+
+function pinTopBlocks(){
+  const pinnedTop = document.getElementById('pinnedTop');
+  const stageBlock = document.getElementById('stageBlock');
+  const quickGridBlock = document.getElementById('quickGridBlock');
+  if (pinnedTop && stageBlock && quickGridBlock && !pinnedTop.contains(stageBlock)) {
+    pinnedTop.appendChild(stageBlock);
+    pinnedTop.appendChild(quickGridBlock);
+    pinnedTop.classList.add('active');
+  }
+}
+function unpinTopBlocks(){
+  const scrollRegion = document.getElementById('scrollRegion');
+  const stageBlock = document.getElementById('stageBlock');
+  const quickGridBlock = document.getElementById('quickGridBlock');
+  const transcriptEl2 = document.getElementById('transcript');
+  const pinnedTop = document.getElementById('pinnedTop');
+  if (scrollRegion && stageBlock && quickGridBlock && transcriptEl2 && pinnedTop && pinnedTop.contains(stageBlock)) {
+    scrollRegion.insertBefore(stageBlock, transcriptEl2);
+    scrollRegion.insertBefore(quickGridBlock, transcriptEl2);
+  }
+  if (pinnedTop) pinnedTop.classList.remove('active');
+}
+
+function vibrate(pattern){
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+
 function showActiveCard(mode){
   activeMode = mode;
   const orbWrap = document.getElementById('orbWrap');
@@ -1295,11 +1669,26 @@ function showActiveCard(mode){
   const card = document.getElementById('activeCard');
   if (orbWrap) orbWrap.style.display = 'none';
   if (statusText) statusText.style.display = 'none';
-  if (card) card.style.display = 'flex';
+  if (card) {
+    card.style.display = 'flex';
+    card.classList.remove('overlay'); // stays inline (like the stopwatch) while counting down
+  }
   const label = document.getElementById('activeLabel');
   if (label) label.textContent = mode.toUpperCase();
   const lapList = document.getElementById('lapList');
   if (lapList) lapList.innerHTML = '';
+  pinTopBlocks();
+  // Best-effort: keep the screen on for the whole countdown, not just once it fires,
+  // since the phone sleeping is exactly what would make it miss the alarm/timer.
+  if (mode === 'alarm' || mode === 'timer') acquireWakeLock();
+}
+// Switches the (already-showing) active card into the full-screen "it just went
+// off" view — title/message front and center, screen held awake, real controls.
+function fireFullscreen(){
+  const card = document.getElementById('activeCard');
+  if (card) card.classList.add('overlay');
+  acquireWakeLock();
+  vibrate([300, 150, 300, 150, 300]);
 }
 function hideActiveCard(){
   activeMode = null;
@@ -1308,11 +1697,21 @@ function hideActiveCard(){
   const card = document.getElementById('activeCard');
   const orbWrap = document.getElementById('orbWrap');
   const statusText = document.getElementById('statusText');
-  if (card) card.style.display = 'none';
+  if (card) { card.style.display = 'none'; card.classList.remove('overlay'); }
   if (orbWrap) orbWrap.style.display = '';
   if (statusText) statusText.style.display = '';
   setRingProgress(0);
+  unpinTopBlocks();
+  releaseWakeLock();
 }
+// If the tab was backgrounded, timers get throttled or paused — as soon as it's
+// visible again, force an immediate recheck so the display and firing state catch
+// up instantly instead of waiting for the next 250ms tick (which may be delayed).
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (activeMode === 'alarm') tickAlarm();
+  else if (activeMode === 'timer') tickTimer();
+});
 
 /* ---- Timer ---- */
 function startTimerUI(ms, label){
@@ -1323,6 +1722,7 @@ function startTimerUI(ms, label){
   const sub = document.getElementById('activeSub');
   if (sub) sub.textContent = label || '';
   renderTimerControls(false);
+  ensureNotifPermission();
   tickTimer();
   activeInterval = setInterval(tickTimer, 250);
 }
@@ -1336,7 +1736,9 @@ function tickTimer(){
     activeInterval = null;
     activeRunning = false;
     const msg = document.getElementById('activeSub').textContent || 'Timer done';
+    fireFullscreen();
     toast('⏰ ' + msg);
+    notifyUser('Timer done', msg);
     speak(msg);
     playTone(settings.notifSound || 'default', 4);
     renderTimerControls(true);
@@ -1360,6 +1762,8 @@ function pauseResumeTimer(){
 let activePausedRemaining = 0;
 function resetTimerUI(){
   clearInterval(activeInterval);
+  const card = document.getElementById('activeCard');
+  if (card) card.classList.remove('overlay');
   activeDeadline = Date.now() + activeDuration;
   activeRunning = true;
   activeInterval = setInterval(tickTimer, 250);
@@ -1397,7 +1801,7 @@ async function ensureNotifPermission(){
 function notifyUser(title, body){
   try {
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body, icon: 'icon-192.png' });
+      new Notification(title, { body, icon: 'icon-192.png', requireInteraction: true, tag: 'voxa-' + title });
     }
   } catch (e) {}
 }
@@ -1429,10 +1833,46 @@ function tickAlarm(){
     activeInterval = null;
     activeRunning = false;
     const note = document.getElementById('activeSub').textContent;
+    fireFullscreen();
     playTone(alarmSoundName, 6);
     notifyUser(note || 'Alarm', note ? note : "Time's up!");
     renderAlarmControls(true);
   }
+}
+// Drag-to-act control, modeled on the phone "slide to answer" gesture. Drag the
+// handle to the end of the track to trigger onComplete; release early and it
+// snaps back. Binds document-level move/up listeners only while actively dragging
+// so nothing leaks across repeated alarms.
+function setupSlideToStop(trackEl, handleEl, onComplete){
+  let dragging = false, startX = 0;
+  const maxLeft = () => trackEl.clientWidth - handleEl.offsetWidth - 8;
+  const getX = (e) => (e.touches ? e.touches[0].clientX : e.clientX);
+  function onMove(e){
+    if (!dragging) return;
+    const newLeft = Math.min(Math.max(4, 4 + (getX(e) - startX)), maxLeft());
+    handleEl.style.left = newLeft + 'px';
+    if (newLeft >= maxLeft() - 2) finish(true);
+  }
+  function onUp(){ if (dragging) finish(false); }
+  function finish(completed){
+    dragging = false;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchend', onUp);
+    if (completed) onComplete();
+    else handleEl.style.left = '4px';
+  }
+  function onDown(e){
+    dragging = true;
+    startX = getX(e);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+  }
+  handleEl.addEventListener('mousedown', onDown);
+  handleEl.addEventListener('touchstart', onDown, { passive: true });
 }
 function renderAlarmControls(done){
   const c = document.getElementById('activeControls');
@@ -1440,13 +1880,22 @@ function renderAlarmControls(done){
   c.innerHTML = '';
   if (done) {
     const note = document.getElementById('activeSub').textContent;
-    c.append(
-      mkBtn('Snooze 5 min', () => {
-        const t = new Date(Date.now() + 5*60000);
-        beginAlarm(t.getHours(), t.getMinutes(), note, alarmSoundName);
-      }),
-      mkBtn('Dismiss', hideActiveCard, 'primary')
-    );
+    c.appendChild(mkBtn('Snooze 5 min', () => {
+      const t = new Date(Date.now() + 5*60000);
+      beginAlarm(t.getHours(), t.getMinutes(), note, alarmSoundName);
+    }));
+    const track = document.createElement('div');
+    track.className = 'slide-stop-track';
+    const label = document.createElement('div');
+    label.className = 'slide-stop-label';
+    label.textContent = 'Slide to stop →';
+    const handle = document.createElement('div');
+    handle.className = 'slide-stop-handle';
+    handle.textContent = '⏹';
+    track.appendChild(label);
+    track.appendChild(handle);
+    c.appendChild(track);
+    setupSlideToStop(track, handle, hideActiveCard);
     return;
   }
   c.append(mkBtn('Cancel alarm', hideActiveCard, 'danger'));
@@ -1597,9 +2046,6 @@ function weatherCodeToText(code){
 
 let conversationHistory = [];
 
-// Note: vision-capable model names on Groq change over time — this is wrapped
-// in a try/catch by the caller so a stale model name degrades gracefully
-// (falls back to text-only) instead of crashing the app.
 function fileToBase64(file){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1608,13 +2054,24 @@ function fileToBase64(file){
     reader.readAsDataURL(file);
   });
 }
+
+// llama-3.2-11b-vision-preview was decommissioned by Groq — this is the
+// current live production vision model as of this build. Groq's model
+// lineup does shift over time; if this ever starts failing again, that's
+// a Groq-side deprecation, and the try/catch below still degrades gracefully.
+// llama-3.2-11b-vision-preview and meta-llama/llama-4-maverick-17b-128e-instruct
+// were both decommissioned by Groq (Feb/June 2026). qwen/qwen3.6-27b is the
+// current live vision-capable model, confirmed directly against Groq's own
+// docs. Groq deprecates models on a fast, ongoing schedule — if this ever
+// fails again, that's them retiring a model, and the catch below still
+// degrades gracefully instead of leaving a raw error in the chat.
 async function askAIVision(question, file){
   const base64 = await fileToBase64(file);
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.apiKey },
     body: JSON.stringify({
-      model: 'llama-3.2-11b-vision-preview',
+      model: 'qwen/qwen3.6-27b',
       messages: [{
         role: 'user',
         content: [
@@ -1622,10 +2079,13 @@ async function askAIVision(question, file){
           { type: 'image_url', image_url: { url: `data:${file.type};base64,${base64}` } }
         ]
       }],
-      max_tokens: 250
+      max_tokens: 400
     })
   });
-  if (!res.ok) throw new Error('vision API error ' + res.status);
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error('vision API error ' + res.status + ' ' + errBody.slice(0, 200));
+  }
   const data = await res.json();
   return data.choices?.[0]?.message?.content?.trim() || "I couldn't describe that image.";
 }
@@ -1635,18 +2095,94 @@ async function askAI(question){
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.apiKey },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages: [
         {role:'system', content:'You are Voxa, a concise voice assistant. Answer in 1-3 short spoken sentences, no markdown, no lists.'},
         ...conversationHistory,
         {role:'user', content: question}
       ],
-      max_tokens: 200
+      max_tokens: 300
     })
   });
-  if (!res.ok) throw new Error('API error ' + res.status);
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error('API error ' + res.status + ' ' + errBody.slice(0, 200));
+  }
   const data = await res.json();
   return data.choices?.[0]?.message?.content?.trim() || "I don't have an answer for that.";
+}
+
+/* ---------------- Document text extraction (images use vision above; these are for PDFs/Word/plain text) ---------------- */
+let pdfjsReady = null;
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+async function ensurePdfJs(){
+  if (window.pdfjsLib) return;
+  if (!pdfjsReady) {
+    pdfjsReady = loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js').then(() => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js';
+    });
+  }
+  await pdfjsReady;
+}
+async function extractPdfText(file){
+  await ensurePdfJs();
+  const buf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+  let text = '';
+  const maxPages = Math.min(pdf.numPages, 20);
+  for (let i = 1; i <= maxPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map((it) => it.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+let mammothReady = null;
+async function ensureMammoth(){
+  if (window.mammoth) return;
+  if (!mammothReady) {
+    mammothReady = loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+  }
+  await mammothReady;
+}
+async function extractDocxText(file){
+  await ensureMammoth();
+  const buf = await file.arrayBuffer();
+  const result = await window.mammoth.extractRawText({ arrayBuffer: buf });
+  return result.value;
+}
+
+// Reads any attached image or document and asks the AI about it, using the
+// user's own message as the question (or a sensible default). Returns the
+// answer as plain text — callers speak/display it and handle failures.
+async function analyzeAttachment(file, userText){
+  const question = userText || 'Describe this in detail.';
+  if (file.type.startsWith('image/')) {
+    return await askAIVision(question, file);
+  }
+  const name = file.name.toLowerCase();
+  let docText = '';
+  if (name.endsWith('.pdf') || file.type === 'application/pdf') {
+    docText = await extractPdfText(file);
+  } else if (name.endsWith('.docx')) {
+    docText = await extractDocxText(file);
+  } else {
+    // Plain text and text-like files (.txt, .md, .csv, .json, code files, etc.)
+    docText = await file.text();
+  }
+  docText = (docText || '').trim();
+  if (!docText) throw new Error('no extractable text found in this file');
+  const prompt = `${question}\n\nDocument content (from "${file.name}"):\n${docText.slice(0, 8000)}`;
+  return await askAI(prompt);
 }
 
 const JOKES = [
@@ -1661,17 +2197,21 @@ const JOKES = [
 async function handleCommand(raw, attachment){
   const text = raw.toLowerCase();
 
-  if (attachment && attachment.file && attachment.file.type.startsWith('image/')) {
+  if (attachment && attachment.file) {
     if (!settings.apiKey) {
-      await speak("I see an image attached, but I need a free AI key in Settings to look at pictures. Continuing with just your text.");
+      await speak("I see a file attached, but I need a free AI key in Settings to read it. Continuing with just your text.");
     } else {
-      await speak('Looking at the image…');
+      const isImage = attachment.file.type.startsWith('image/');
+      await speak(isImage ? 'Looking at the image…' : 'Reading the document…');
       try {
-        const answer = await askAIVision(raw || 'Describe this image.', attachment.file);
+        const answer = await analyzeAttachment(attachment.file, raw);
+        conversationHistory.push({role:'user', content: raw || `(sent a file: ${attachment.file.name})`});
+        conversationHistory.push({role:'assistant', content: answer});
+        if (conversationHistory.length > 10) conversationHistory.splice(0, conversationHistory.length - 10);
         await speak(answer);
         return;
       } catch (e) {
-        await speak("I couldn't analyze the image just now — continuing with your text instead.");
+        await speak(`I couldn't read that file just now (${e.message}). Continuing with your text instead.`);
       }
     }
   }
@@ -1834,7 +2374,15 @@ window.addEventListener('load', () => {
     }
   } catch (e) { /* ignore — offline caching is a nice-to-have, never blocks the app */ }
   $('versionBadge').textContent = 'v' + VOXA_VERSION;
-  addLine('assistant', "Hi, I'm Voxa. Tap the mic and talk to me.");
+
+  const existing = findSession(currentSessionId);
+  if (existing && existing.messages.length) {
+    existing.messages.forEach((m) => addLine(m.role, m.text));
+    conversationHistory = existing.messages.slice(-10).map((m) => ({ role: m.role, content: m.text }));
+  } else {
+    appendMessage('assistant', "Hi, I'm Voxa. Tap the mic and talk to me.");
+  }
+  renderSidebarList();
 });
 </script>
 </body>
